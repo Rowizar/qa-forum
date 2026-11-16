@@ -26,6 +26,35 @@ class QuestionTests(TestCase):
         self.assertContains(response, "This is a sample question text.")
 
 
+class CreateQuestionTests(TestCase):
+    """The 'new question' form in the sidebar of every page."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user('asker', 'asker@example.com', 'pass12345')
+        cls.question = Question.objects.create(author=cls.user, title='Existing', text='text')
+
+    def test_form_on_any_page_posts_to_the_creating_view(self):
+        self.client.force_login(self.user)
+        for url in [reverse('feed'), reverse('login'), reverse('question_detail', args=[self.question.id])]:
+            with self.subTest(url=url):
+                self.assertContains(
+                    self.client.get(url), '<form method="post" action="%s"' % reverse('base'))
+
+    def test_logged_in_user_creates_a_question(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+        question = Question.objects.get(title='How?')
+        self.assertRedirects(response, reverse('question_detail', args=[question.id]))
+        self.assertEqual(question.author, self.user)
+
+    def test_anonymous_cannot_create_and_sees_no_form(self):
+        response = self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Question.objects.count(), 1)
+        self.assertNotContains(response, 'name="title"')
+
+
 class CategoryPageTests(TestCase):
     @classmethod
     def setUpTestData(cls):

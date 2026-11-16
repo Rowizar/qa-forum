@@ -107,58 +107,22 @@ def question_list(request, category_id):
 
 def feed(request):
     questions = Question.objects.all().order_by('-pub_date')
-    if request.method == 'POST' and request.user.is_authenticated:
-        form = QuestionForm(request.POST, request.FILES)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.author = request.user
-            question.save()
-            return redirect('question_detail', question.id)
-    else:
-        form = QuestionForm()
     return render(request, 'feed.html', {'questions': questions})
 
 
 def popular(request):
     questions = Question.objects.annotate(num_ratings=Count('questionrating')).order_by('-num_ratings')
-    if request.method == 'POST' and request.user.is_authenticated:
-        form = QuestionForm(request.POST, request.FILES)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.author = request.user
-            question.save()
-            return redirect('question_detail', question.id)
-    else:
-        form = QuestionForm()
     return render(request, 'popular.html', {'questions': questions})
 
 
 def recent(request):
     questions = Question.objects.all().order_by('-pub_date')
-    if request.method == 'POST' and request.user.is_authenticated:
-        form = QuestionForm(request.POST, request.FILES)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.author = request.user
-            question.save()
-            return redirect('question_detail', question.id)
-    else:
-        form = QuestionForm()
     return render(request, 'recent.html', {'questions': questions})
 
 
 def search(request):
     query = request.GET.get('query', '')
     results = Question.objects.filter(title__icontains=query)
-    if request.method == 'POST' and request.user.is_authenticated:
-        form = QuestionForm(request.POST, request.FILES)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.author = request.user
-            question.save()
-            return redirect('question_detail', question.id)
-    else:
-        form = QuestionForm()
     return render(request, 'search_results.html', {'results': results})
 
 
@@ -257,15 +221,6 @@ def delete_bookmark(request, bookmark_id):
 @login_required
 def bookmarks(request):
     bookmarks = Bookmark.objects.filter(user=request.user)
-    if request.method == 'POST' and request.user.is_authenticated:
-        form = QuestionForm(request.POST, request.FILES)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.author = request.user
-            question.save()
-            return redirect('question_detail', question.id)
-    else:
-        form = QuestionForm()
     return render(request, 'bookmarks.html', {'bookmarks': bookmarks})
 
 
