@@ -75,11 +75,16 @@ docker compose up --build
 
 Суперпользователь в Docker: `docker compose exec web python manage.py createsuperuser`.
 
-## Тесты
+## Тесты и проверка кода
 
 ```bash
-python manage.py test
+pip install -r requirements-dev.txt   # один раз: ставит линтер ruff
+python manage.py test                 # тесты
+ruff check .                          # проверка кода; ruff check . --fix исправит простое сам
 ```
+
+Те же проверки GitHub запускает сам при каждой отправке кода: см.
+[.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 ## Настройки
 

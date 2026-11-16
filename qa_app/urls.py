@@ -21,7 +21,7 @@ urlpatterns = [
     path('popular/', views.popular, name='popular'),
     path('search/', views.search, name='search'),
     path('register/', views.register, name='register'),
-    path('question/<int:id>/', views.question_detail, name='question_detail'),
+    path('question/<int:question_id>/', views.question_detail, name='question_detail'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('login/', auth_views.LoginView.as_view(
         template_name='login.html', redirect_authenticated_user=True), name='login'),

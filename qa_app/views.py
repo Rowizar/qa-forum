@@ -172,8 +172,8 @@ def _can_close(user, question):
     return user.is_authenticated and (user == question.author or user.is_staff)
 
 
-def question_detail(request, id):
-    question = get_object_or_404(Question.objects.with_rating().select_related('author'), id=id)
+def question_detail(request, question_id):
+    question = get_object_or_404(Question.objects.with_rating().select_related('author'), id=question_id)
     answers = Answer.objects.with_rating().filter(question=question).select_related('user').order_by('pub_date')
 
     bookmark = None
