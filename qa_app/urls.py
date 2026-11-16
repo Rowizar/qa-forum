@@ -14,10 +14,11 @@ urlpatterns = [
     path('', views.feed, name='feed'),
     # Old address of the feed, kept so that existing links keep working.
     path('feed/', RedirectView.as_view(pattern_name='feed', query_string=True)),
+    # 'Recent' showed exactly the same list as the feed.
+    path('recent/', RedirectView.as_view(pattern_name='feed', query_string=True)),
     path('ask/', views.ask_question, name='ask_question'),
     path('category/<int:category_id>/', views.question_list, name='question_list'),
     path('popular/', views.popular, name='popular'),
-    path('recent/', views.recent, name='recent'),
     path('search/', views.search, name='search'),
     path('register/', views.register, name='register'),
     path('question/<int:id>/', views.question_detail, name='question_detail'),

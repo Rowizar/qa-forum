@@ -2,10 +2,12 @@
 
 {% block content %}
     <h2>{{ question.title }}</h2>
+    {% include 'includes/question_meta.html' %}
     {% if question.image %}
-        <img style="max-width: 500px" src="{{ question.image.url }}">
+        <img style="max-width: 500px" src="{{ question.image.url }}" alt="">
     {% endif %}
-    <p>{{ question.text }}</p>
+    <p>{{ question.text|linebreaksbr }}</p>
+    {% include 'includes/question_votes.html' %}
 
     {% if request.user.is_authenticated %}
         {% if bookmark %}

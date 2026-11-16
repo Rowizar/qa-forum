@@ -102,6 +102,62 @@ class CategoryPageTests(TestCase):
         response = self.client.get(reverse('question_list', args=[9999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_category_is_named_and_linked_from_every_page(self):
+        url = reverse('question_list', args=[self.category.id])
+        self.assertContains(self.client.get(url), 'Категория: Python')
+        for page in [reverse('feed'), reverse('popular'), reverse('login')]:
+            with self.subTest(page=page):
+                self.assertContains(self.client.get(page), 'href="%s"' % url)
+
+
+class QuestionListTests(TestCase):
+    """Feed, popular and search share one template with pagination."""
+
+    @classmethod
+    def setUpTestData(cls):
+        author = User.objects.create_user('author', password='pass12345')
+        # 25 questions: three pages of 10, 10 and 5.
+        for number in range(1, 26):
+            Question.objects.create(author=author, title=f'Question {number:02}', text='about pagination')
+        Question.objects.filter(title='Question 07').update(text='mentions a zebra')
+
+    def titles(self, response):
+        return [question.title for question in response.context['questions']]
+
+    def test_feed_shows_newest_first_ten_per_page(self):
+        response = self.client.get(reverse('feed'))
+        self.assertEqual(self.titles(response), [f'Question {n:02}' for n in range(25, 15, -1)])
+        self.assertContains(response, 'Страница 1 из 3')
+        self.assertContains(response, 'href="?page=2"')
+
+    def test_last_page_and_out_of_range_pages(self):
+        last = [f'Question {n:02}' for n in range(5, 0, -1)]
+        self.assertEqual(self.titles(self.client.get(reverse('feed') + '?page=3')), last)
+        # A page number that does not exist shows the nearest page instead of an error.
+        self.assertEqual(self.titles(self.client.get(reverse('feed') + '?page=99')), last)
+        self.assertEqual(len(self.titles(self.client.get(reverse('popular') + '?page=abc'))), 10)
+
+    def test_search_looks_in_titles_and_texts(self):
+        self.assertEqual(self.titles(self.client.get(reverse('search') + '?query=zebra')), ['Question 07'])
+        self.assertEqual(self.titles(self.client.get(reverse('search') + '?query=question+13')), ['Question 13'])
+
+    def test_search_pages_keep_the_query(self):
+        response = self.client.get(reverse('search') + '?query=pagination')
+        self.assertContains(response, 'Страница 1 из 3')
+        self.assertContains(response, 'href="?query=pagination&amp;page=2"')
+        self.assertContains(response, 'value="pagination"')
+        second = self.client.get(reverse('search') + '?query=pagination&page=2')
+        self.assertEqual(len(self.titles(second)), 10)
+
+    def test_search_without_results_or_query(self):
+        self.assertContains(self.client.get(reverse('search') + '?query=unicorn'), 'ничего не найдено')
+        response = self.client.get(reverse('search'))
+        self.assertEqual(self.titles(response), [])
+        self.assertContains(response, 'Введите запрос')
+
+    def test_recent_redirects_to_the_feed(self):
+        self.assertRedirects(self.client.get('/qa_app/recent/'), reverse('feed'))
+
 
 class QuestionAdminTests(TestCase):
     @classmethod

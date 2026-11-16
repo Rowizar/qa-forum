@@ -4,6 +4,7 @@ from functools import wraps
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,6 +23,8 @@ from .models import Answer, AnswerRating, Bookmark, Category, Question, Question
 from .permissions import IsOwnerOrReadOnly
 from .serializers import AnswerSerializer, QuestionSerializer
 from .services import notify_question_created
+
+QUESTIONS_PER_PAGE = 10
 
 
 class QuestionSearchViewSet(viewsets.ViewSet):
@@ -100,31 +103,51 @@ def ask_question(request):
     return render(request, 'ask_question.html', {'form': form})
 
 
-def question_list(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    questions = Question.objects.with_rating().filter(categories=category).order_by('-pub_date')
-    return render(request, 'feed.html', {'questions': questions})
+def _question_list_page(request, questions, heading, empty_message='Здесь пока нет вопросов.'):
+    """Render one page of a list of questions. All question lists go through here."""
+    questions = questions.with_rating().select_related('author').prefetch_related('categories')
+    # Questions equal in the main sort order (same rating, same second) must
+    # still come in a fixed order, or they would jump between pages.
+    questions = questions.order_by(*questions.query.order_by, '-id')
+    # get_page() never fails: a wrong or missing page number gives the nearest valid page.
+    page = Paginator(questions, QUESTIONS_PER_PAGE).get_page(request.GET.get('page'))
+    return render(request, 'question_list.html', {
+        'heading': heading,
+        'questions': page,
+        'empty_message': empty_message,
+    })
 
 
 def feed(request):
-    questions = Question.objects.with_rating().order_by('-pub_date')
-    return render(request, 'feed.html', {'questions': questions})
+    return _question_list_page(request, Question.objects.order_by('-pub_date'), 'Лента')
 
 
 def popular(request):
+    # with_rating() is applied here as well, because the list is sorted by it.
     questions = Question.objects.with_rating().order_by('-rating_total', '-pub_date')
-    return render(request, 'popular.html', {'questions': questions})
+    return _question_list_page(request, questions, 'Популярные')
 
 
-def recent(request):
-    questions = Question.objects.with_rating().order_by('-pub_date')
-    return render(request, 'recent.html', {'questions': questions})
+def question_list(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    questions = Question.objects.filter(categories=category).order_by('-pub_date')
+    return _question_list_page(
+        request, questions, f'Категория: {category.name}',
+        empty_message='В этой категории пока нет вопросов.',
+    )
 
 
 def search(request):
-    query = request.GET.get('query', '')
-    results = Question.objects.with_rating().filter(title__icontains=query).order_by('-pub_date')
-    return render(request, 'search_results.html', {'results': results})
+    query = request.GET.get('query', '').strip()
+    if query:
+        questions = Question.objects.filter(
+            Q(title__icontains=query) | Q(text__icontains=query)
+        ).order_by('-pub_date')
+        empty_message = 'По вашему запросу ничего не найдено.'
+    else:
+        questions = Question.objects.none()
+        empty_message = 'Введите запрос в строку поиска.'
+    return _question_list_page(request, questions, 'Результаты поиска', empty_message)
 
 
 def register(request):
@@ -140,7 +163,7 @@ def register(request):
 
 
 def question_detail(request, id):
-    question = get_object_or_404(Question, id=id)
+    question = get_object_or_404(Question.objects.with_rating().select_related('author'), id=id)
     answers = Answer.objects.with_rating().filter(question=question).select_related('user').order_by('pub_date')
 
     bookmark = None
