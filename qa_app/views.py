@@ -1,31 +1,27 @@
-from django.db.models import Count
-from django.shortcuts import render, redirect
-from .forms import QuestionForm
-from .models import Category, Question, Answer, Bookmark, QuestionRating, AnswerRating
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import get_object_or_404, render
-from .forms import AnswerForm
-from .serializers import QuestionSerializer, AnswerSerializer
-from django.db.models import Q
-from rest_framework import viewsets
-from rest_framework.response import Response
-from django.utils.timezone import make_aware
 from datetime import datetime
-from rest_framework.decorators import action
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from .permissions import IsOwnerOrReadOnly
-from .services import notify_question_created
-from .forms import SignUpForm
 from functools import wraps
-from django.http import HttpResponseForbidden
+
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
+from django.db.models import Count, Q
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.timezone import make_aware
 from django.views.decorators.http import require_POST
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+
+from .forms import AnswerForm, QuestionForm, SignUpForm
+from .models import Answer, AnswerRating, Bookmark, Category, Question, QuestionRating
+from .permissions import IsOwnerOrReadOnly
+from .serializers import AnswerSerializer, QuestionSerializer
+from .services import notify_question_created
 
 
 class QuestionSearchViewSet(viewsets.ViewSet):
@@ -134,12 +130,7 @@ def register(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            user.refresh_from_db()  # Загрузите профиль instance, чтобы сохранить дополнительные данные
-            user.email = form.cleaned_data.get('email')
-            user.save()
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=user.username, password=raw_password)
+            user = form.save()  # the form saves the e-mail too
             login(request, user)
             return redirect('base')
     else:

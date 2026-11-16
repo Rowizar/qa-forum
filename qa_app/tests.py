@@ -205,6 +205,26 @@ class UserActionTests(TestCase):
         self.assertEqual(self.client.get(url).status_code, 200)
 
 
+class RegistrationTests(TestCase):
+    def test_new_user_is_saved_with_email_and_logged_in(self):
+        response = self.client.post(reverse('register'), {
+            'username': 'newcomer', 'email': 'newcomer@example.com',
+            'password1': 'a-long-passphrase-42', 'password2': 'a-long-passphrase-42',
+        })
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(username='newcomer')
+        self.assertEqual(user.email, 'newcomer@example.com')
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.id)
+
+    def test_mismatched_passwords_show_an_error(self):
+        response = self.client.post(reverse('register'), {
+            'username': 'newcomer', 'email': 'newcomer@example.com',
+            'password1': 'a-long-passphrase-42', 'password2': 'something-else-43',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username='newcomer').exists())
+
+
 class LoginTests(TestCase):
     @classmethod
     def setUpTestData(cls):

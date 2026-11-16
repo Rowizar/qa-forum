@@ -1,10 +1,9 @@
-from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import QuestionViewSet, AnswerViewSet
-from .views import QuestionSearchViewSet
+
+from . import views
+from .views import AnswerViewSet, QuestionSearchViewSet, QuestionViewSet
 
 router = DefaultRouter()
 router.register(r'questions', QuestionViewSet)
