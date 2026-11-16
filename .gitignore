@@ -1,0 +1,30 @@
+# Secrets and local settings
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+
+# Celery
+celerybeat-schedule*
+celerybeat.pid
+
+# Tools
+.idea/
+.vscode/
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db

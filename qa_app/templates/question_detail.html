@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ question.title }}</h2>
+    {% if question.image %}
+        <img style="max-width: 500px" src="{{ question.image.url }}">
+    {% endif %}
+    <p>{{ question.text }}</p>
+
+    {% if request.user.is_authenticated %}
+        {% if bookmark %}
+            <a href="{% url 'delete_bookmark' bookmark.id %}">Удалить из избранного</a>
+        {% else %}
+            <a href="{% url 'add_bookmark' question.id %}">Добавить в избранное</a>
+        {% endif %}
+    {% endif %}
+
+    <h2>Ответы</h2>
+    {% for answer in answers %}
+        <div>
+            <p>{{ answer.text }}</p>
+            <p>By {{ answer.user.username }} at {{ answer.pub_date }}</p>
+            <a href="{% url 'upvote_answer' answer.id %}">🔺</a>
+            <span>{{ answer.get_rating }}</span>
+            <a href="{% url 'downvote_answer' answer.id %}">🔻</a>
+        </div>
+    {% endfor %}
+
+    <h2>Отправить ответ</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Отправить</button>
+    </form>
+{% endblock %}
+
