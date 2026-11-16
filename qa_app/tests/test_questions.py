@@ -131,6 +131,25 @@ class QuestionListTests(TestCase):
         self.assertEqual(self.titles(self.client.get(reverse('search') + '?query=zebra')), ['Question 07'])
         self.assertEqual(self.titles(self.client.get(reverse('search') + '?query=question+13')), ['Question 13'])
 
+    def test_search_ignores_case_in_any_alphabet(self):
+        author = User.objects.first()
+        Question.objects.create(author=author, title='Зачем нужно Окружение?', text='100% вопрос_текст')
+        for query in ['окружение', 'ОКРУЖЕНИЕ', 'Окружение', 'ZEBRA']:
+            with self.subTest(query=query):
+                self.assertEqual(len(self.titles(self.client.get(reverse('search'), {'query': query}))), 1)
+        # "%" and "_" in a query are ordinary characters, not wildcards.
+        self.assertEqual(len(self.titles(self.client.get(reverse('search'), {'query': '100%'}))), 1)
+        self.assertEqual(self.titles(self.client.get(reverse('search'), {'query': '1_0'})), [])
+        self.assertEqual(self.titles(self.client.get(reverse('search'), {'query': 'вопрос%текст'})), [])
+
+    def test_missing_page_uses_the_site_design(self):
+        response = self.client.get(reverse('question_detail', args=[99999]))
+        self.assertContains(response, 'Page not found', status_code=404)
+        self.assertContains(response, 'Back to the feed', status_code=404)
+        self.assertContains(response, 'css/style.css', status_code=404)
+        russian = self.client.get('/no-such-page/', HTTP_ACCEPT_LANGUAGE='ru')
+        self.assertContains(russian, 'Страница не найдена', status_code=404)
+
     def test_search_pages_keep_the_query(self):
         response = self.client.get(reverse('search') + '?query=pagination')
         self.assertContains(response, 'Page 1 of 3')
