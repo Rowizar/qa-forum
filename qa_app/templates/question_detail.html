@@ -63,7 +63,8 @@
         <div class="message message-info">{% translate 'This question is closed: new answers are not accepted.' %}</div>
     {% elif request.user.is_authenticated %}
         <h2 class="section-title">{% translate 'Your answer' %}</h2>
-        <form method="post" class="card">
+        {# The anchor brings the reader back to the form if the answer has an error. #}
+        <form method="post" action="#answer-form" id="answer-form" class="card">
             {% csrf_token %}
             {% include 'includes/form_fields.html' %}
             <button type="submit" class="button">{% translate 'Post answer' %}</button>
