@@ -77,7 +77,8 @@ def base(request):
 
 
 def question_list(request, category_id):
-    questions = Question.objects.filter(category_id=category_id)
+    category = get_object_or_404(Category, id=category_id)
+    questions = Question.objects.filter(categories=category).order_by('-pub_date')
     return render(request, 'feed.html', {'questions': questions})
 
 
