@@ -44,11 +44,17 @@
         </div>
     {% endfor %}
 
-    <h2>Отправить ответ</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Отправить</button>
-    </form>
+    {% if question.is_closed %}
+        <p class="alert alert-secondary">Вопрос закрыт: новые ответы не принимаются.</p>
+    {% elif request.user.is_authenticated %}
+        <h2>Отправить ответ</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Отправить</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы ответить.</p>
+    {% endif %}
 {% endblock %}
 

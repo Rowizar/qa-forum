@@ -21,6 +21,7 @@ from .permissions import IsOwnerOrReadOnly
 from .services import notify_question_created
 from .forms import SignUpForm
 from functools import wraps
+from django.http import HttpResponseForbidden
 from django.contrib.auth.views import redirect_to_login
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -153,6 +154,9 @@ def question_detail(request, id):
     bookmark = None
     if request.user.is_authenticated:
         bookmark = Bookmark.objects.filter(user=request.user, question=question).first()
+
+    if request.method == 'POST' and question.is_closed:
+        return HttpResponseForbidden('This question is closed and does not accept new answers.')
 
     if request.method == 'POST' and request.user.is_authenticated:
         form = AnswerForm(request.POST, request.FILES)

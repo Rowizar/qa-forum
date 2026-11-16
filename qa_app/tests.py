@@ -316,6 +316,56 @@ class ApiPermissionTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
 
+class AnswerTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user('helper', password='pass12345')
+        cls.open = Question.objects.create(author=cls.user, title='Open', text='text')
+        cls.closed = Question.objects.create(author=cls.user, title='Closed', text='text', is_closed=True)
+
+    def test_answer_to_an_open_question(self):
+        self.client.force_login(self.user)
+        url = reverse('question_detail', args=[self.open.id])
+        self.assertContains(self.client.get(url), 'Отправить ответ')
+        self.assertRedirects(self.client.post(url, {'text': 'My answer'}), url)
+        self.assertEqual(self.open.answer_set.get().user, self.user)
+
+    def test_anonymous_cannot_answer(self):
+        url = reverse('question_detail', args=[self.open.id])
+        response = self.client.get(url)
+        self.assertNotContains(response, 'Отправить ответ')
+        self.assertContains(response, reverse('login') + '?next=' + url)
+        self.client.post(url, {'text': 'My answer'})
+        self.assertEqual(Answer.objects.count(), 0)
+
+    def test_closed_question_does_not_accept_answers(self):
+        self.client.force_login(self.user)
+        url = reverse('question_detail', args=[self.closed.id])
+        response = self.client.get(url)
+        self.assertContains(response, 'Вопрос закрыт')
+        self.assertNotContains(response, 'Отправить ответ')
+        self.assertEqual(self.client.post(url, {'text': 'My answer'}).status_code, 403)
+        self.assertEqual(Answer.objects.count(), 0)
+
+    def test_closed_question_does_not_accept_answers_through_the_api(self):
+        client = APIClient()
+        client.force_authenticate(self.user)
+        url = reverse('answer-list')
+        response = client.post(url, {'question': self.closed.id, 'text': 'My answer'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Answer.objects.count(), 0)
+
+        # An answer given before the question was closed can still be corrected,
+        # but not moved to a closed question.
+        old_answer = Answer.objects.create(user=self.user, question=self.closed, text='Old')
+        answer_url = reverse('answer-detail', args=[old_answer.id])
+        self.assertEqual(client.patch(answer_url, {'text': 'Fixed'}, format='json').status_code, 200)
+        other = Answer.objects.create(user=self.user, question=self.open, text='Other')
+        response = client.patch(
+            reverse('answer-detail', args=[other.id]), {'question': self.closed.id}, format='json')
+        self.assertEqual(response.status_code, 400)
+
+
 class EmailTests(TestCase):
     @classmethod
     def setUpTestData(cls):

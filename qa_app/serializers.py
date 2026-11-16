@@ -22,6 +22,14 @@ class AnswerSerializer(serializers.ModelSerializer):
     def get_rating(self, obj):
         return obj.get_rating()
 
+    def validate_question(self, question):
+        # An existing answer keeps its question; only new answers (or answers
+        # moved to another question) are checked.
+        moved = self.instance is None or self.instance.question_id != question.id
+        if moved and question.is_closed:
+            raise serializers.ValidationError('This question is closed and does not accept new answers.')
+        return question
+
     class Meta:
         model = Answer
         fields = ['id', 'user', 'question', 'text', 'pub_date', 'rating']
