@@ -16,6 +16,11 @@ from datetime import datetime
 from rest_framework.decorators import action
 from rest_framework import status
 from .forms import SignUpForm
+from functools import wraps
+from django.contrib.auth.views import redirect_to_login
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 
 class QuestionSearchViewSet(viewsets.ViewSet):
@@ -179,33 +184,59 @@ def question_detail(request, id):
                   {'question': question, 'answers': answers, 'form': form, 'bookmark': bookmark})
 
 
+def _back_url(request, fallback='feed'):
+    """Address of the page the request came from, if it is a page of this site."""
+    referer = request.META.get('HTTP_REFERER', '')
+    if url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+        return referer
+    return reverse(fallback)
+
+
+def user_action(view):
+    """For views that change something on behalf of the user (vote, bookmark).
+
+    They accept only POST, so they are covered by CSRF protection and cannot
+    be triggered by a plain link. An anonymous user is sent to the login page
+    and afterwards returns to the page they came from, not to the action URL.
+    """
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(_back_url(request))
+        return view(request, *args, **kwargs)
+    return require_POST(wrapper)
+
+
 def login_view(request):
+    next_url = request.POST.get('next') or request.GET.get('next', '')
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
             return redirect('base')
-        else:
-            # Invalid username or password
-            return render(request, 'login.html', {'error': 'Invalid username or password'})
-    else:
-        return render(request, 'login.html')
+        return render(request, 'login.html', {'error': 'Invalid username or password', 'next': next_url})
+    return render(request, 'login.html', {'next': next_url})
 
 
+@user_action
 def bookmark(request, question_id):
     question = get_object_or_404(Question, id=question_id)
-    Bookmark.objects.create(user=request.user, question=question)
-    return redirect('feed')  # или куда вам нужно перенаправить пользователя после добавления в закладки
+    Bookmark.objects.get_or_create(user=request.user, question=question)
+    return redirect(_back_url(request))
 
 
+@user_action
 def delete_bookmark(request, bookmark_id):
     bookmark = get_object_or_404(Bookmark, id=bookmark_id, user=request.user)
     bookmark.delete()
-    return redirect('bookmarks')  # или куда вам нужно перенаправить пользователя после удаления из закладок
+    return redirect(_back_url(request, fallback='bookmarks'))
 
 
+@login_required
 def bookmarks(request):
     bookmarks = Bookmark.objects.filter(user=request.user)
     if request.method == 'POST' and request.user.is_authenticated:
@@ -220,57 +251,33 @@ def bookmarks(request):
     return render(request, 'bookmarks.html', {'bookmarks': bookmarks})
 
 
-@login_required
+def _vote(request, rating_model, value, **target):
+    """Set the current user's vote for a question or an answer to +1 or -1."""
+    rating_model.objects.update_or_create(
+        user=request.user, **target, defaults={'rating': value},
+    )
+    return redirect(_back_url(request))
+
+
+@user_action
 def upvote_question(request, question_id):
     question = get_object_or_404(Question, id=question_id)
-    question_rating, created = QuestionRating.objects.get_or_create(
-        user=request.user,
-        question=question,
-        defaults={'rating': 1},
-    )
-    if not created:
-        question_rating.rating = 1
-        question_rating.save()
-    return redirect(request.META.get('HTTP_REFERER', 'base'))
+    return _vote(request, QuestionRating, 1, question=question)
 
 
-@login_required
+@user_action
 def downvote_question(request, question_id):
     question = get_object_or_404(Question, id=question_id)
-    question_rating, created = QuestionRating.objects.get_or_create(
-        user=request.user,
-        question=question,
-        defaults={'rating': -1},
-    )
-    if not created:
-        question_rating.rating = -1
-        question_rating.save()
-    return redirect(request.META.get('HTTP_REFERER', 'base'))
+    return _vote(request, QuestionRating, -1, question=question)
 
 
-@login_required
+@user_action
 def upvote_answer(request, answer_id):
     answer = get_object_or_404(Answer, id=answer_id)
-    answer_rating, created = AnswerRating.objects.get_or_create(
-        user=request.user,
-        answer=answer,
-        defaults={'rating': 1},
-    )
-    if not created:
-        answer_rating.rating = 1
-        answer_rating.save()
-    return redirect(request.META.get('HTTP_REFERER', 'base'))
+    return _vote(request, AnswerRating, 1, answer=answer)
 
 
-@login_required
+@user_action
 def downvote_answer(request, answer_id):
     answer = get_object_or_404(Answer, id=answer_id)
-    answer_rating, created = AnswerRating.objects.get_or_create(
-        user=request.user,
-        answer=answer,
-        defaults={'rating': -1},
-    )
-    if not created:
-        answer_rating.rating = -1
-        answer_rating.save()
-    return redirect(request.META.get('HTTP_REFERER', 'base'))
+    return _vote(request, AnswerRating, -1, answer=answer)

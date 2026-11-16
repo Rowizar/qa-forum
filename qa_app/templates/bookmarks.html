@@ -6,7 +6,10 @@
         <div>
             <h2><a href="{% url 'question_detail' id=bookmark.question.id %}">{{ bookmark.question.title }}</a></h2>
             <p>{{ bookmark.question.text|truncatechars:100 }}</p>
-            <p><a href="{% url 'delete_bookmark' bookmark.id %}">Удалить из избранного</a></p>
+            <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link p-0">Удалить из избранного</button>
+            </form>
         </div>
     {% empty %}
         <p>У вас пока нет вопросов в избранном.</p>

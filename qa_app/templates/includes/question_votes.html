@@ -1,0 +1,15 @@
+<div class="votes">
+    {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'upvote_question' question.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="vote-button" title="Нравится">🔺</button>
+        </form>
+    {% endif %}
+    <span>{{ question.get_rating }}</span>
+    {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'downvote_question' question.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="vote-button" title="Не нравится">🔻</button>
+        </form>
+    {% endif %}
+</div>

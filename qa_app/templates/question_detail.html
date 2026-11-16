@@ -9,9 +9,15 @@
 
     {% if request.user.is_authenticated %}
         {% if bookmark %}
-            <a href="{% url 'delete_bookmark' bookmark.id %}">Удалить из избранного</a>
+            <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link p-0">Удалить из избранного</button>
+            </form>
         {% else %}
-            <a href="{% url 'add_bookmark' question.id %}">Добавить в избранное</a>
+            <form method="post" action="{% url 'add_bookmark' question.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link p-0">Добавить в избранное</button>
+            </form>
         {% endif %}
     {% endif %}
 
@@ -20,9 +26,21 @@
         <div>
             <p>{{ answer.text }}</p>
             <p>By {{ answer.user.username }} at {{ answer.pub_date }}</p>
-            <a href="{% url 'upvote_answer' answer.id %}">🔺</a>
-            <span>{{ answer.get_rating }}</span>
-            <a href="{% url 'downvote_answer' answer.id %}">🔻</a>
+            <div class="votes">
+                {% if request.user.is_authenticated %}
+                    <form method="post" action="{% url 'upvote_answer' answer.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="vote-button" title="Нравится">🔺</button>
+                    </form>
+                {% endif %}
+                <span>{{ answer.get_rating }}</span>
+                {% if request.user.is_authenticated %}
+                    <form method="post" action="{% url 'downvote_answer' answer.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="vote-button" title="Не нравится">🔻</button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
     {% endfor %}
 

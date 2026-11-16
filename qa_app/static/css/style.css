@@ -21,6 +21,13 @@ body {
     color: #007bff;
 }
 
+.vote-button {
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
 .container {
     margin-top: 20px;
 }
