@@ -48,11 +48,15 @@ class QuestionAdmin(SimpleHistoryAdmin):
     search_fields = ('title', 'author__username', 'text')
     date_hierarchy = 'pub_date'
     inlines = [AnswerInline, ]
-    readonly_fields = ('get_rating', 'pub_date', 'author')
-    actions = ['make_closed', 'export_to_excel']
+    readonly_fields = ('author', 'pub_date', 'get_rating')
+    filter_horizontal = ('categories',)
+    actions = ['make_closed', export_to_excel]
     fieldsets = (
         (None, {
-            'fields': ('title', 'text', 'categories')
+            'fields': ('title', 'text', 'image', 'categories')
+        }),
+        ('Details', {
+            'fields': ('author', 'pub_date', 'get_rating'),
         }),
         ('Advanced options', {
             'classes': ('collapse',),
@@ -60,21 +64,20 @@ class QuestionAdmin(SimpleHistoryAdmin):
         }),
     )
 
+    def save_model(self, request, obj, form, change):
+        # The author field is read-only, so a question created in the admin
+        # belongs to the administrator who created it.
+        if not change:
+            obj.author = request.user
+        super().save_model(request, obj, form, change)
+
     def make_closed(self, request, queryset):
-        queryset.update(is_closed=True)
+        # Saved one by one, not with update(), so each change gets a history record.
+        for question in queryset.filter(is_closed=False):
+            question.is_closed = True
+            question.save()
 
     make_closed.short_description = "Mark selected questions as closed"
-
-
-class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('title_short', 'author', 'pub_date', 'get_rating')
-    list_filter = ('author', 'pub_date', 'categories')
-    search_fields = ('title', 'author__username')
-    date_hierarchy = 'pub_date'
-    inlines = [AnswerInline, ]
-    readonly_fields = ('get_rating',)
-    filter_horizontal = ('categories',)
-    actions = [export_to_excel]
 
     def get_rating(self, obj):
         return obj.get_rating()
