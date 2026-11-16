@@ -23,6 +23,14 @@
         {% endif %}
     {% endif %}
 
+    {% if can_close %}
+        <form method="post" action="{% url 'close_question' question.id %}"
+              onsubmit="return confirm('Закрыть вопрос? Новые ответы принимать перестанут, открыть его снова нельзя.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link p-0">Закрыть вопрос</button>
+        </form>
+    {% endif %}
+
     <h2>Ответы</h2>
     {% for answer in answers %}
         <div>

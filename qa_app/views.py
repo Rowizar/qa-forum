@@ -185,7 +185,8 @@ def question_detail(request, id):
         form = AnswerForm()
 
     return render(request, 'question_detail.html',
-                  {'question': question, 'answers': answers, 'form': form, 'bookmark': bookmark})
+                  {'question': question, 'answers': answers, 'form': form, 'bookmark': bookmark,
+                   'can_close': _can_close(request.user, question) and not question.is_closed})
 
 
 def _back_url(request, fallback='feed'):
@@ -244,6 +245,22 @@ def delete_bookmark(request, bookmark_id):
 def bookmarks(request):
     bookmarks = Bookmark.objects.filter(user=request.user).select_related('question').order_by('-created_at')
     return render(request, 'bookmarks.html', {'bookmarks': bookmarks})
+
+
+def _can_close(user, question):
+    return user.is_authenticated and (user == question.author or user.is_staff)
+
+
+@user_action
+def close_question(request, question_id):
+    """Stop accepting answers. Only the author (or staff) may do it; there is no reopening."""
+    question = get_object_or_404(Question, id=question_id)
+    if not _can_close(request.user, question):
+        return HttpResponseForbidden('Only the author can close this question.')
+    if not question.is_closed:
+        question.is_closed = True
+        question.save()
+    return redirect('question_detail', question.id)
 
 
 def _vote(request, rating_model, value, **target):

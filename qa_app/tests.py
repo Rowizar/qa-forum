@@ -110,6 +110,48 @@ class CategoryPageTests(TestCase):
                 self.assertContains(self.client.get(page), 'href="%s"' % url)
 
 
+class CloseQuestionTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = User.objects.create_user('author', password='pass12345')
+        cls.stranger = User.objects.create_user('stranger', password='pass12345')
+        cls.staff = User.objects.create_user('moderator', password='pass12345', is_staff=True)
+        cls.question = Question.objects.create(author=cls.author, title='Mine', text='text')
+        cls.page = reverse('question_detail', args=[cls.question.id])
+        cls.url = reverse('close_question', args=[cls.question.id])
+
+    def is_closed(self):
+        self.question.refresh_from_db()
+        return self.question.is_closed
+
+    def test_author_sees_the_button_and_can_close(self):
+        self.client.force_login(self.author)
+        self.assertContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertRedirects(self.client.post(self.url), self.page)
+        self.assertTrue(self.is_closed())
+        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        # The change is recorded in the question's history.
+        self.assertEqual(self.question.history.count(), 2)
+
+    def test_staff_can_close(self):
+        self.client.force_login(self.staff)
+        self.client.post(self.url)
+        self.assertTrue(self.is_closed())
+
+    def test_other_users_cannot_close(self):
+        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertEqual(self.client.post(self.url).status_code, 302)  # to the login page
+        self.client.force_login(self.stranger)
+        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertEqual(self.client.post(self.url).status_code, 403)
+        self.assertFalse(self.is_closed())
+
+    def test_plain_link_does_not_close(self):
+        self.client.force_login(self.author)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.assertFalse(self.is_closed())
+
+
 class QuestionListTests(TestCase):
     """Feed, popular and search share one template with pagination."""
 
