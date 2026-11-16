@@ -84,19 +84,20 @@ class AnswerViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-def base(request):
-    categories = Category.objects.all()
-    if request.method == 'POST' and request.user.is_authenticated:
+@login_required
+def ask_question(request):
+    if request.method == 'POST':
         form = QuestionForm(request.POST, request.FILES)
         if form.is_valid():
             question = form.save(commit=False)
             question.author = request.user
             question.save()
+            form.save_m2m()  # categories can be saved only after the question itself
             notify_question_created(question)
             return redirect('question_detail', question.id)
     else:
         form = QuestionForm()
-    return render(request, 'base.html', {'categories': categories, 'form': form})
+    return render(request, 'ask_question.html', {'form': form})
 
 
 def question_list(request, category_id):
@@ -132,7 +133,7 @@ def register(request):
         if form.is_valid():
             user = form.save()  # the form saves the e-mail too
             login(request, user)
-            return redirect('base')
+            return redirect('feed')
     else:
         form = SignUpForm()
     return render(request, 'register.html', {'form': form})
@@ -197,7 +198,7 @@ def login_view(request):
             login(request, user)
             if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                 return redirect(next_url)
-            return redirect('base')
+            return redirect('feed')
         return render(request, 'login.html', {'error': 'Invalid username or password', 'next': next_url})
     return render(request, 'login.html', {'next': next_url})
 

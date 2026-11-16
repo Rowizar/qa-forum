@@ -33,32 +33,52 @@ class QuestionTests(TestCase):
 
 
 class CreateQuestionTests(TestCase):
-    """The 'new question' form in the sidebar of every page."""
+    """The 'ask a question' page."""
 
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create_user('asker', 'asker@example.com', 'pass12345')
-        cls.question = Question.objects.create(author=cls.user, title='Existing', text='text')
+        cls.python = Category.objects.create(name='Python', description='')
+        cls.django = Category.objects.create(name='Django', description='')
+        cls.url = reverse('ask_question')
 
-    def test_form_on_any_page_posts_to_the_creating_view(self):
-        self.client.force_login(self.user)
-        for url in [reverse('feed'), reverse('login'), reverse('question_detail', args=[self.question.id])]:
+    def test_every_page_links_to_the_form(self):
+        for url in [reverse('feed'), reverse('login'), reverse('popular')]:
             with self.subTest(url=url):
-                self.assertContains(
-                    self.client.get(url), '<form method="post" action="%s"' % reverse('base'))
+                self.assertContains(self.client.get(url), 'href="%s"' % self.url)
 
-    def test_logged_in_user_creates_a_question(self):
+    def test_form_offers_categories(self):
         self.client.force_login(self.user)
-        response = self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Python')
+        self.assertContains(response, 'Django')
+
+    def test_logged_in_user_creates_a_question_with_categories(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            self.url, {'title': 'How?', 'text': 'Like this', 'categories': [self.python.id]})
         question = Question.objects.get(title='How?')
         self.assertRedirects(response, reverse('question_detail', args=[question.id]))
         self.assertEqual(question.author, self.user)
+        self.assertEqual(list(question.categories.all()), [self.python])
 
-    def test_anonymous_cannot_create_and_sees_no_form(self):
-        response = self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+    def test_errors_are_shown_and_input_is_kept(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {'title': '', 'text': 'My long text'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Question.objects.count(), 1)
-        self.assertNotContains(response, 'name="title"')
+        self.assertEqual(Question.objects.count(), 0)
+        self.assertContains(response, 'This field is required.')
+        self.assertContains(response, 'My long text')
+
+    def test_anonymous_is_sent_to_login_and_back(self):
+        login_url = reverse('login') + '?next=' + self.url
+        self.assertRedirects(self.client.get(self.url), login_url)
+        self.assertRedirects(self.client.post(self.url, {'title': 'How?', 'text': 'Like this'}), login_url)
+        self.assertEqual(Question.objects.count(), 0)
+
+    def test_old_feed_address_redirects_to_the_home_page(self):
+        response = self.client.get('/qa_app/feed/?page=2')
+        self.assertRedirects(response, reverse('feed') + '?page=2')
 
 
 class CategoryPageTests(TestCase):
@@ -306,7 +326,7 @@ class LoginTests(TestCase):
 
     def test_ignores_foreign_next_address(self):
         response = self.login('https://evil.example/')
-        self.assertRedirects(response, reverse('base'), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse('feed'), fetch_redirect_response=False)
 
     def test_wrong_password(self):
         response = self.client.post(reverse('login'), {'username': 'reader', 'password': 'nope'})
@@ -461,7 +481,7 @@ class EmailTests(TestCase):
 
     def test_author_gets_an_email_about_a_new_question(self):
         self.client.force_login(self.user)
-        self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+        self.client.post(reverse('ask_question'), {'title': 'How?', 'text': 'Like this'})
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['asker@example.com'])
         self.assertIn('How?', mail.outbox[0].body)
@@ -474,14 +494,14 @@ class EmailTests(TestCase):
 
     def test_no_email_without_an_address(self):
         self.client.force_login(User.objects.get(username='no_email'))
-        self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+        self.client.post(reverse('ask_question'), {'title': 'How?', 'text': 'Like this'})
         self.assertEqual(mail.outbox, [])
 
     def test_question_is_created_even_if_the_email_cannot_be_queued(self):
         self.client.force_login(self.user)
         with mock.patch('qa_app.tasks.send_question_created_email.delay', side_effect=OSError('broker down')), \
                 self.assertLogs('qa_app', 'ERROR'):
-            response = self.client.post(reverse('base'), {'title': 'How?', 'text': 'Like this'})
+            response = self.client.post(reverse('ask_question'), {'title': 'How?', 'text': 'Like this'})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Question.objects.filter(title='How?').exists())
 
@@ -515,7 +535,7 @@ class VisitLogTests(TestCase):
     def test_visit_is_recorded_with_os_and_browser(self):
         self.client.get(reverse('feed') + '?page=2', HTTP_USER_AGENT=CHROME_ON_WINDOWS)
         visit = PageVisit.objects.get()
-        self.assertEqual(visit.url, 'http://testserver/qa_app/feed/?page=2')
+        self.assertEqual(visit.url, 'http://testserver/qa_app/?page=2')
         self.assertEqual(visit.method, 'GET')
         self.assertIsNone(visit.user)
         self.assertEqual(visit.os, 'Windows')
@@ -581,7 +601,7 @@ class VisitLogTests(TestCase):
         self.assertEqual(queue, [])
         visits = list(PageVisit.objects.order_by('id'))
         self.assertEqual([v.url for v in visits], [
-            'http://testserver/qa_app/feed/', 'http://testserver/qa_app/popular/', 'http://testserver/x/',
+            'http://testserver/qa_app/', 'http://testserver/qa_app/popular/', 'http://testserver/x/',
         ])
         self.assertEqual(visits[0].browser, 'Chrome')
         self.assertIsNone(visits[2].user)

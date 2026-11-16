@@ -11,7 +11,7 @@
 <body>
 <header class="d-flex justify-content-between p-3 bg-light header">
     <div>
-<span style="background-color: #007bff; font-weight: bold; font-size: 30px; color: white; border-radius: 10px; display: inline-block;">QA</span>
+<a href="{% url 'feed' %}" style="background-color: #007bff; font-weight: bold; font-size: 30px; color: white; border-radius: 10px; display: inline-block; text-decoration: none;">QA</a>
     </div>
     <div class="d-flex justify-content-center">
         <nav class="pr-3" >
@@ -48,29 +48,8 @@
             {% block content %}{% endblock %}
         </div>
         <div class="col-md-4">
-            <h2 class="mb-3">Создать новый вопрос</h2>
-            {% if request.user.is_authenticated %}
-            {# Always posts to the home page view: the form is shown on every page, #}
-            {# but only that view creates questions. #}
-            <form method="post" action="{% url 'base' %}" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="title">Название вопроса</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="text">Текст вопроса</label>
-                    <textarea class="form-control" id="text" name="text" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="image">Добавить картинку (необязательно)</label>
-                    <input type="file" class="form-control-file" id="image" name="image">
-                </div>
-                <button type="submit" class="btn btn-primary">Создать</button>
-            </form>
-            {% else %}
-                <p><a href="{% url 'login' %}">Войдите</a>, чтобы задать вопрос.</p>
-            {% endif %}
+            {# Anonymous visitors are sent to the login page and then back to the form. #}
+            <a href="{% url 'ask_question' %}" class="btn btn-primary btn-block mb-3">Задать вопрос</a>
         </div>
     </div>
     </div>

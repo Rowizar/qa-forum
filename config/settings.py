@@ -117,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'base'
+LOGOUT_REDIRECT_URL = 'feed'
 
 # --- Internationalization ---------------------------------------------------
 
