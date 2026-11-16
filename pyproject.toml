@@ -1,0 +1,18 @@
+# Settings for ruff, the linter. Run it with:  ruff check .
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["qa_app/migrations"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # style
+    "F",       # unused imports and variables, undefined names
+    "I",       # import order
+    "B",       # common bugs
+    "UP",      # outdated syntax
+    "DJ",      # Django-specific checks
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "qa_app"]

@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.translation import get_language
 
-
 from .models import PageVisit
 
 logger = logging.getLogger(__name__)

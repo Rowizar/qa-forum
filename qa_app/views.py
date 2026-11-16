@@ -75,7 +75,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
             try:
                 start_date = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
             except ValueError:
-                raise ValidationError({'start_date': 'Expected a date in the YYYY-MM-DD format.'})
+                raise ValidationError({'start_date': 'Expected a date in the YYYY-MM-DD format.'}) from None
             queryset = queryset.filter(pub_date__gte=start_date)
         return queryset
 

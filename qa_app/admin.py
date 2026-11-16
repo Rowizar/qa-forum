@@ -1,12 +1,21 @@
-from django.contrib import admin
-from django.template.defaultfilters import truncatechars
-from simple_history.admin import SimpleHistoryAdmin
-from .models import Category, UserCategoryPreference, Question, QuestionRating, Answer, AnswerRating, Bookmark, \
-    PageVisit
 import openpyxl
-from openpyxl.utils import get_column_letter
+from django.contrib import admin
 from django.http import HttpResponse
+from django.template.defaultfilters import truncatechars
+from openpyxl.utils import get_column_letter
+from simple_history.admin import SimpleHistoryAdmin
+
 from .inlines import AnswerInline
+from .models import (
+    Answer,
+    AnswerRating,
+    Bookmark,
+    Category,
+    PageVisit,
+    Question,
+    QuestionRating,
+    UserCategoryPreference,
+)
 
 
 def export_to_excel(modeladmin, request, queryset):

@@ -66,12 +66,12 @@ class Question(RatedMixin, models.Model):
 
     objects = QuestionQuerySet.as_manager()
 
+    def __str__(self):
+        return self.title
+
     @property
     def ratings(self):
         return self.questionrating_set
-
-    def __str__(self):
-        return self.title
 
 
 class Answer(RatedMixin, models.Model):
@@ -82,12 +82,12 @@ class Answer(RatedMixin, models.Model):
 
     objects = AnswerQuerySet.as_manager()
 
+    def __str__(self):
+        return self.text
+
     @property
     def ratings(self):
         return self.answerrating_set
-
-    def __str__(self):
-        return self.text
 
 
 class QuestionRating(models.Model):
@@ -155,9 +155,15 @@ class PageVisit(models.Model):
     query_params = models.TextField(verbose_name=_('GET parameters'))
     method = models.CharField(max_length=10, verbose_name=_('HTTP method'))
     user_agent = models.CharField(max_length=256, verbose_name='User Agent')
-    os = models.CharField(max_length=100, verbose_name=_('operating system'), blank=True, null=True)
-    browser = models.CharField(max_length=100, verbose_name=_('browser'), blank=True, null=True)
+    # null=True is historical: old rows hold NULL, new ones an empty string.
+    os = models.CharField(  # noqa: DJ001
+        max_length=100, verbose_name=_('operating system'), blank=True, null=True)
+    browser = models.CharField(  # noqa: DJ001
+        max_length=100, verbose_name=_('browser'), blank=True, null=True)
 
     class Meta:
         verbose_name = _('page visit')
         verbose_name_plural = _('page visits')
+
+    def __str__(self):
+        return f'{self.method} {self.url}'
