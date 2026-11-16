@@ -1,0 +1,19 @@
+{% load i18n static %}<!DOCTYPE html>
+{# Shown when the site itself breaks, so it depends on as little as possible: no base template, no database. #}
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% translate 'Something went wrong' %} · QA</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<main class="wrap layout-narrow">
+    <h1>{% translate 'Something went wrong' %}</h1>
+    <div class="card empty">
+        <p>{% translate 'The error is on our side. Please try again a little later.' %}</p>
+        <a href="/" class="button">{% translate 'Back to the feed' %}</a>
+    </div>
+</main>
+</body>
+</html>

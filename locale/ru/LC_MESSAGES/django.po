@@ -295,3 +295,23 @@ msgstr "Убрано из избранного."
 #: qa_app/views.py:270
 msgid "The question is closed."
 msgstr "Вопрос закрыт."
+
+#: qa_app/templates/404.html:4 qa_app/templates/404.html:8
+msgid "Page not found"
+msgstr "Страница не найдена"
+
+#: qa_app/templates/404.html:10
+msgid "This page does not exist or has been removed."
+msgstr "Такой страницы нет или её удалили."
+
+#: qa_app/templates/404.html:11 qa_app/templates/500.html:15
+msgid "Back to the feed"
+msgstr "Вернуться в ленту"
+
+#: qa_app/templates/500.html:7 qa_app/templates/500.html:12
+msgid "Something went wrong"
+msgstr "Что-то пошло не так"
+
+#: qa_app/templates/500.html:14
+msgid "The error is on our side. Please try again a little later."
+msgstr "Ошибка на нашей стороне. Попробуйте ещё раз чуть позже."

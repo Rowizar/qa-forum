@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% translate 'Page not found' %} · {% endblock %}
+
+{% block layout %}
+<main class="wrap layout-narrow">
+    <h1>{% translate 'Page not found' %}</h1>
+    <div class="card empty">
+        <p>{% translate 'This page does not exist or has been removed.' %}</p>
+        <a href="{% url 'feed' %}" class="button">{% translate 'Back to the feed' %}</a>
+    </div>
+</main>
+{% endblock %}
