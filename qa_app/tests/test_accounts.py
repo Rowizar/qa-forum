@@ -45,3 +45,26 @@ class LoginTests(TestCase):
     def test_wrong_password(self):
         response = self.client.post(reverse('login'), {'username': 'reader', 'password': 'nope'})
         self.assertContains(response, 'Please enter a correct username and password')
+
+    def test_logged_in_user_is_not_shown_the_login_form_again(self):
+        self.client.login(username='reader', password='pass12345')
+        self.assertRedirects(self.client.get(reverse('login')), reverse('feed'))
+
+    def test_header_shows_who_is_logged_in(self):
+        self.assertContains(self.client.get(reverse('feed')), 'Sign up')
+        self.client.login(username='reader', password='pass12345')
+        response = self.client.get(reverse('feed'))
+        self.assertContains(response, 'reader')
+        self.assertContains(response, 'Log out')
+        self.assertNotContains(response, 'Sign up')
+
+
+class LogoutTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user('reader', password='pass12345'))
+
+    def test_logout_works_by_post_only(self):
+        self.assertEqual(self.client.get(reverse('logout')).status_code, 405)
+        self.assertIn('_auth_user_id', self.client.session)
+        self.assertRedirects(self.client.post(reverse('logout')), reverse('feed'))
+        self.assertNotIn('_auth_user_id', self.client.session)

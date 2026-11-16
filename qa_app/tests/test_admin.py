@@ -1,9 +1,11 @@
+from io import BytesIO
 
+import openpyxl
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from qa_app.models import Question
+from qa_app.models import Answer, Question, QuestionRating
 
 
 class QuestionAdminTests(TestCase):
@@ -43,3 +45,30 @@ class QuestionAdminTests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Question.objects.get(title='From admin').author, self.admin)
+
+    def test_export_to_excel(self):
+        QuestionRating.objects.create(user=self.admin, question=self.question, rating=1)
+        response = self.client.post(reverse('admin:qa_app_question_changelist'), {
+            'action': 'export_to_excel',
+            '_selected_action': [self.question.id],
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('questions.xlsx', response['Content-Disposition'])
+        rows = list(openpyxl.load_workbook(BytesIO(response.content)).active.values)
+        self.assertEqual(rows[0], ('ID', 'Title', 'Author', 'Publication Date', 'Rating'))
+        self.assertEqual(rows[1][:3], (self.question.id, 'Admin question', 'boss'))
+        self.assertEqual(rows[1][4], 1)
+
+    def test_other_admin_pages_open(self):
+        Answer.objects.create(user=self.admin, question=self.question, text='answer')
+        self.client.get(reverse('feed'))  # leaves a page visit to list
+        for model in ['answer', 'category', 'bookmark', 'questionrating', 'answerrating', 'pagevisit']:
+            with self.subTest(model=model):
+                response = self.client.get(reverse(f'admin:qa_app_{model}_changelist'))
+                self.assertEqual(response.status_code, 200)
+
+    def test_admin_is_closed_to_ordinary_users(self):
+        self.client.force_login(User.objects.create_user('reader', password='pass12345'))
+        response = self.client.get(reverse('admin:qa_app_question_changelist'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('admin:login'), response['Location'])
