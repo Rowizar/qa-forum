@@ -10,8 +10,10 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'author', 'title', 'text', 'image', 'pub_date', 'categories', 'rating']
-
+        fields = ['id', 'author', 'title', 'text', 'image', 'pub_date', 'categories', 'is_closed', 'rating']
+        # The author is always the user who makes the request; a question is
+        # closed through the separate `close` action.
+        read_only_fields = ['author', 'is_closed']
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -23,3 +25,4 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = ['id', 'user', 'question', 'text', 'pub_date', 'rating']
+        read_only_fields = ['user']

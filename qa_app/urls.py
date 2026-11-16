@@ -28,7 +28,8 @@ urlpatterns = [
     path('question/<int:question_id>/downvote/', views.downvote_question, name='downvote_question'),
     path('answer/<int:answer_id>/upvote/', views.upvote_answer, name='upvote_answer'),
     path('answer/<int:answer_id>/downvote/', views.downvote_answer, name='downvote_answer'),
-    path('', include(router.urls)),
+    # Must stay above the router: otherwise 'questions/<pk>/' takes "search" for an id.
     path('questions/search/', QuestionSearchViewSet.as_view({'get': 'list'}), name='question-search'),
+    path('', include(router.urls)),
 
 ]

@@ -15,6 +15,9 @@ from django.utils.timezone import make_aware
 from datetime import datetime
 from rest_framework.decorators import action
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from .permissions import IsOwnerOrReadOnly
 from .forms import SignUpForm
 from functools import wraps
 from django.contrib.auth.views import redirect_to_login
@@ -43,8 +46,14 @@ class QuestionSearchViewSet(viewsets.ViewSet):
 
 
 class QuestionViewSet(viewsets.ModelViewSet):
+    """Questions: anyone can read, only the author can change, delete or close."""
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    owner_field = 'author'
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
@@ -54,17 +63,26 @@ class QuestionViewSet(viewsets.ModelViewSet):
         return Response({'status': 'question closed'})
 
     def get_queryset(self):
-        queryset = Question.objects.all()
+        queryset = Question.objects.order_by('-pub_date')
         start_date = self.request.query_params.get('start_date', None)
         if start_date:
-            start_date = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+            try:
+                start_date = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+            except ValueError:
+                raise ValidationError({'start_date': 'Expected a date in the YYYY-MM-DD format.'})
             queryset = queryset.filter(pub_date__gte=start_date)
         return queryset
 
 
 class AnswerViewSet(viewsets.ModelViewSet):
-    queryset = Answer.objects.all()
+    """Answers: anyone can read, only the author can change or delete."""
+    queryset = Answer.objects.order_by('pub_date')
     serializer_class = AnswerSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    owner_field = 'user'
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 def base(request):
