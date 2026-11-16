@@ -16,14 +16,6 @@ app.conf.beat_schedule = {
         'task': 'qa_app.tasks.send_daily_email',
         'schedule': crontab(hour=8, minute=0),
     },
-    "test-every-minute": {
-        "task": "qa_app.tasks.test_task",
-        "schedule": crontab(minute="*/1"),
-    },
-    'send-minute-email-every-minute': {
-        'task': 'qa_app.tasks.send_minute_email',
-        'schedule': crontab(minute='*/1'),
-    },
     'save_visits_every-minute': {
         'task': 'qa_app.tasks.task_save_visits',
         'schedule': crontab(minute='*/1'),

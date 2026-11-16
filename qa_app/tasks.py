@@ -1,10 +1,13 @@
 from datetime import timedelta
+
 from celery import shared_task
-from celery.utils.time import timezone
 from django.contrib.auth.models import User
-from qa_app.models import Question
-from django.core.mail import send_mail
+from django.core.mail import send_mail, send_mass_mail
+from django.utils import timezone
+
+from .models import Question
 from .services import save_visits
+
 
 @shared_task
 def send_daily_email():
@@ -18,17 +21,17 @@ def send_daily_email():
         f"Title: {question.title}\nText: {question.text}\n" for question in recent_questions
     )
 
-    recipients = User.objects.filter(is_active=True).values_list('email', flat=True)
-    recipients = [email for email in recipients if email]
+    recipients = User.objects.filter(is_active=True).exclude(email='').values_list('email', flat=True)
 
     if not recipients:
         return "No users to send updates."
 
-    send_mail(
-        'Your daily update from the QA',
-        'Here are the latest questions added to the QA in the last 24 hours:\n\n' + questions_info,
-        None,  # sender: DEFAULT_FROM_EMAIL
-        recipients,
+    subject = 'Your daily update from the QA'
+    body = 'Here are the latest questions added to the QA in the last 24 hours:\n\n' + questions_info
+    # One message per recipient, so users do not see each other's addresses.
+    # Sender None means DEFAULT_FROM_EMAIL.
+    send_mass_mail(
+        [(subject, body, None, [email]) for email in recipients],
         fail_silently=False,
     )
     return "Emails sent successfully with the latest questions."
@@ -43,20 +46,8 @@ def send_question_created_email(user_email, question_title):
         [user_email],
         fail_silently=False,
     )
-@shared_task
-def test_task():
-    print("Task is running")
 
-@shared_task
-def send_minute_email():
-    send_mail(
-        'Minute Email',
-        'This email is sent every minute by Celery.',
-        None,  # sender: DEFAULT_FROM_EMAIL
-        ['to@example.com'],
-        fail_silently=False,
-    )
-    return "Sent minute email"
+
 @shared_task
 def task_save_visits():
     save_visits()

@@ -18,6 +18,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .permissions import IsOwnerOrReadOnly
+from .services import notify_question_created
 from .forms import SignUpForm
 from functools import wraps
 from django.contrib.auth.views import redirect_to_login
@@ -53,7 +54,8 @@ class QuestionViewSet(viewsets.ModelViewSet):
     owner_field = 'author'
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        question = serializer.save(author=self.request.user)
+        notify_question_created(question)
 
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
@@ -93,6 +95,7 @@ def base(request):
             question = form.save(commit=False)
             question.author = request.user
             question.save()
+            notify_question_created(question)
             return redirect('question_detail', question.id)
     else:
         form = QuestionForm()

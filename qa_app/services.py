@@ -103,6 +103,24 @@ def save_visits():
             logger.exception('Could not save a queued visit: %r', raw_visit)
 
 
+def notify_question_created(question):
+    """E-mail the author that their question is posted (if they have an address).
+
+    The e-mail is sent by a Celery task. If the task cannot be queued, for
+    example the broker is down, the question stays created and the problem
+    is only logged.
+    """
+    if not question.author.email:
+        return
+
+    # Imported here because tasks.py imports this module.
+    from .tasks import send_question_created_email
+    try:
+        send_question_created_email.delay(question.author.email, question.title)
+    except Exception:
+        logger.exception('Could not queue the e-mail about question %s', question.pk)
+
+
 def _create_visit(visit_data):
     user_id = visit_data.get('user')
     # The user may have been deleted while the visit was waiting in the queue.
