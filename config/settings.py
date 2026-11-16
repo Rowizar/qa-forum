@@ -5,6 +5,7 @@ Everything environment-specific (secrets, debug mode, hosts, Redis, e-mail)
 is read from environment variables or from a local `.env` file.
 See `.env.example` for the full list.
 """
+import sys
 from pathlib import Path
 
 import environ
@@ -22,6 +23,31 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+
+# Origins (scheme + host) allowed to send forms, e.g. https://forum.example.com.
+# Needed when the site is served over HTTPS behind a proxy.
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
+# HTTPS-only mode. On by default whenever DEBUG is off, so a production
+# deployment is safe without extra settings. Set HTTPS_ONLY=False only to try
+# DEBUG=False locally over plain HTTP. Tests always use plain HTTP.
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+HTTPS_ONLY = env.bool('HTTPS_ONLY', default=not DEBUG) and not TESTING
+
+if HTTPS_ONLY:
+    SECURE_SSL_REDIRECT = True      # http:// requests are redirected to https://
+    SESSION_COOKIE_SECURE = True    # login cookie is sent over HTTPS only
+    CSRF_COOKIE_SECURE = True
+    # Browsers remember to use HTTPS for this long. One hour to start with;
+    # raise to 31536000 (a year) once HTTPS is known to work.
+    SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=3600)
+
+# Set to True when a reverse proxy (nginx, a hosting platform) terminates HTTPS
+# and passes the X-Forwarded-Proto header. Without it Django cannot tell that
+# the original request was secure and redirects forever. Never enable it when
+# the app is reachable directly: the header could then be forged.
+if env.bool('BEHIND_HTTPS_PROXY', default=False):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # --- Applications -----------------------------------------------------------
 
