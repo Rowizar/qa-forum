@@ -95,7 +95,10 @@ class AnswerViewSet(viewsets.ModelViewSet):
 
 def _question_list_page(request, questions, heading, empty_message=None):
     """Render one page of a list of questions. All question lists go through here."""
-    questions = questions.with_rating().select_related('author').prefetch_related('categories')
+    questions = (
+        questions.with_rating().with_user_vote(request.user)
+        .select_related('author').prefetch_related('categories')
+    )
     # Questions equal in the main sort order (same rating, same second) must
     # still come in a fixed order, or they would jump between pages.
     questions = questions.order_by(*questions.query.order_by, '-id')
@@ -173,8 +176,14 @@ def _can_close(user, question):
 
 
 def question_detail(request, question_id):
-    question = get_object_or_404(Question.objects.with_rating().select_related('author'), id=question_id)
-    answers = Answer.objects.with_rating().filter(question=question).select_related('user').order_by('pub_date')
+    question = get_object_or_404(
+        Question.objects.with_rating().with_user_vote(request.user).select_related('author'),
+        id=question_id,
+    )
+    answers = (
+        Answer.objects.with_rating().with_user_vote(request.user)
+        .filter(question=question).select_related('user').order_by('pub_date')
+    )
 
     bookmark = None
     if request.user.is_authenticated:
@@ -272,10 +281,15 @@ def close_question(request, question_id):
 
 
 def _vote(request, rating_model, value, **target):
-    """Set the current user's vote for a question or an answer to +1 or -1."""
-    rating_model.objects.update_or_create(
-        user=request.user, **target, defaults={'rating': value},
-    )
+    """Set the current user's vote for a question or an answer to +1 or -1.
+
+    Pressing the arrow that is already chosen takes the vote back.
+    """
+    same_vote = rating_model.objects.filter(user=request.user, **target, rating=value)
+    if not same_vote.delete()[0]:
+        rating_model.objects.update_or_create(
+            user=request.user, **target, defaults={'rating': value},
+        )
     return redirect(_back_url(request))
 
 

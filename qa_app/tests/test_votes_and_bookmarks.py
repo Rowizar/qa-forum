@@ -53,16 +53,45 @@ class UserActionTests(TestCase):
         response = client.post(reverse('upvote_question', args=[self.question.id]))
         self.assertEqual(response.status_code, 403)
 
-    def test_vote_can_be_changed_but_counts_once(self):
+    def test_vote_can_be_changed_and_taken_back(self):
         self.client.force_login(self.user)
-        self.client.post(reverse('upvote_question', args=[self.question.id]))
-        self.client.post(reverse('upvote_question', args=[self.question.id]))
-        self.assertEqual(self.question.get_rating(), 1)
-        self.client.post(reverse('downvote_question', args=[self.question.id]))
-        self.assertEqual(self.question.get_rating(), -1)
+        up = reverse('upvote_question', args=[self.question.id])
+        down = reverse('downvote_question', args=[self.question.id])
+        # Each step: the arrow pressed and the rating expected afterwards.
+        steps = [(up, 1), (up, 0), (up, 1), (down, -1), (down, 0), (down, -1), (up, 1)]
+        for url, expected in steps:
+            self.client.post(url)
+            self.assertEqual(self.question.get_rating(), expected)
+        self.assertEqual(QuestionRating.objects.count(), 1)
 
         self.client.post(reverse('upvote_answer', args=[self.answer.id]))
         self.assertEqual(self.answer.get_rating(), 1)
+        self.client.post(reverse('upvote_answer', args=[self.answer.id]))
+        self.assertEqual(self.answer.get_rating(), 0)
+
+    def test_own_vote_is_highlighted(self):
+        stranger = User.objects.create_user('stranger', password='pass12345')
+        QuestionRating.objects.create(user=stranger, question=self.question, rating=1)
+        pages = [reverse('feed'), reverse('question_detail', args=[self.question.id])]
+
+        # Someone else's vote lights nothing up, for a guest or for the reader.
+        for page in pages:
+            self.assertNotContains(self.client.get(page), 'is-active')
+        self.client.force_login(self.user)
+        for page in pages:
+            self.assertNotContains(self.client.get(page), 'is-active')
+
+        self.client.post(reverse('downvote_question', args=[self.question.id]))
+        for page in pages:
+            with self.subTest(page=page):
+                response = self.client.get(page)
+                self.assertContains(response, 'is-active', count=1)
+                self.assertContains(
+                    response, 'vote-button is-active" aria-pressed="true" title="Vote down"')
+
+        self.client.post(reverse('upvote_answer', args=[self.answer.id]))
+        response = self.client.get(pages[1])
+        self.assertContains(response, 'vote-button is-active" aria-pressed="true" title="Vote up"', count=1)
 
     def test_redirects_back_only_to_own_pages(self):
         self.client.force_login(self.user)

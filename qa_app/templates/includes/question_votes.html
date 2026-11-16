@@ -1,3 +1,3 @@
 {% url 'upvote_question' question.id as up_url %}
 {% url 'downvote_question' question.id as down_url %}
-{% include 'includes/votes.html' with rating=question.get_rating %}
+{% include 'includes/votes.html' with rating=question.get_rating user_vote=question.user_vote %}

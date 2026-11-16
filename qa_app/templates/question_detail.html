@@ -46,7 +46,7 @@
         <article class="card post">
             {% url 'upvote_answer' answer.id as up_url %}
             {% url 'downvote_answer' answer.id as down_url %}
-            {% include 'includes/votes.html' with rating=answer.get_rating %}
+            {% include 'includes/votes.html' with rating=answer.get_rating user_vote=answer.user_vote %}
             <div class="post-body">
                 <div class="post-text">{{ answer.text|linebreaks }}</div>
                 <div class="post-meta">

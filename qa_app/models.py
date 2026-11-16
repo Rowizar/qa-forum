@@ -23,16 +23,32 @@ def _rating_total(rating_model, target_field):
     return Coalesce(Subquery(totals), 0, output_field=models.IntegerField())
 
 
+def _vote_of(rating_model, target_field, user):
+    """The given user's own vote for each row of the outer query: 1, -1 or None."""
+    if not user.is_authenticated:
+        return models.Value(None, output_field=models.IntegerField())
+    votes = rating_model.objects.filter(**{target_field: OuterRef('pk')}, user=user)
+    return Subquery(votes.values('rating')[:1])
+
+
 class QuestionQuerySet(models.QuerySet):
     def with_rating(self):
         """Load ratings together with the questions, in the same query."""
         return self.annotate(rating_total=_rating_total(QuestionRating, 'question'))
+
+    def with_user_vote(self, user):
+        """Add `user_vote`: how this user voted, so the page can highlight the arrow."""
+        return self.annotate(user_vote=_vote_of(QuestionRating, 'question', user))
 
 
 class AnswerQuerySet(models.QuerySet):
     def with_rating(self):
         """Load ratings together with the answers, in the same query."""
         return self.annotate(rating_total=_rating_total(AnswerRating, 'answer'))
+
+    def with_user_vote(self, user):
+        """Add `user_vote`: how this user voted, so the page can highlight the arrow."""
+        return self.annotate(user_vote=_vote_of(AnswerRating, 'answer', user))
 
 
 class RatedMixin:

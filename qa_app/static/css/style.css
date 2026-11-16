@@ -520,6 +520,13 @@ a.tag:hover {
     color: var(--accent);
 }
 
+/* The arrow the reader has already pressed; pressing it again takes the vote back. */
+.vote-button.is-active,
+.vote-button.is-active:hover {
+    background: var(--accent);
+    color: var(--accent-contrast);
+}
+
 .vote-count {
     font-weight: 700;
     font-size: 1.05rem;
