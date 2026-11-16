@@ -15,11 +15,11 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class AnswerSerializer(serializers.ModelSerializer):
-	rating = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
 
-	def get_rating(self, obj):
-		return obj.get_rating()
+    def get_rating(self, obj):
+        return obj.get_rating()
 
-	class Meta:
-		model = Answer
-		fields = ['id', 'user', 'question', 'text', 'pub_date', 'rating']
+    class Meta:
+        model = Answer
+        fields = ['id', 'user', 'question', 'text', 'pub_date', 'rating']

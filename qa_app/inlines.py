@@ -3,5 +3,5 @@ from .models import Answer
 
 
 class AnswerInline(admin.TabularInline):
-	model = Answer
-	extra = 1
+    model = Answer
+    extra = 1

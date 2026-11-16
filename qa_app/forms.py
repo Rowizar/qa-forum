@@ -6,15 +6,15 @@ from django.contrib.auth.models import User
 
 
 class QuestionForm(forms.ModelForm):
-	class Meta:
-		model = Question
-		fields = ['title', 'text', 'image']
+    class Meta:
+        model = Question
+        fields = ['title', 'text', 'image']
 
 
 class AnswerForm(forms.ModelForm):
-	class Meta:
-		model = Answer
-		fields = ['text']
+    class Meta:
+        model = Answer
+        fields = ['text']
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, help_text='Required. Inform a valid email address.')
