@@ -79,8 +79,13 @@ class QuestionAdmin(SimpleHistoryAdmin):
 
     make_closed.short_description = "Mark selected questions as closed"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).with_rating()
+
     def get_rating(self, obj):
         return obj.get_rating()
+
+    get_rating.admin_order_field = 'rating_total'
 
     def title_short(self, obj):
         return truncatechars(obj.title, 10)
@@ -95,8 +100,13 @@ class AnswerAdmin(admin.ModelAdmin):
     search_fields = ('question__title', 'user__username', 'text')
     raw_id_fields = ('question',)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).with_rating()
+
     def get_rating(self, obj):
         return obj.get_rating()
+
+    get_rating.admin_order_field = 'rating_total'
 
     def text_short(self, obj):
         return truncatechars(obj.text, 10)

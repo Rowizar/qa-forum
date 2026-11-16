@@ -4,7 +4,7 @@ from functools import wraps
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -26,7 +26,7 @@ from .services import notify_question_created
 
 class QuestionSearchViewSet(viewsets.ViewSet):
     def list(self, request):
-        queryset = Question.objects.all()
+        queryset = Question.objects.with_rating().prefetch_related('categories').order_by('-pub_date')
         search = request.query_params.get('search', None)
         category = request.query_params.get('category', None)
 
@@ -45,7 +45,7 @@ class QuestionSearchViewSet(viewsets.ViewSet):
 
 class QuestionViewSet(viewsets.ModelViewSet):
     """Questions: anyone can read, only the author can change, delete or close."""
-    queryset = Question.objects.all()
+    queryset = Question.objects.with_rating()
     serializer_class = QuestionSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     owner_field = 'author'
@@ -62,7 +62,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
         return Response({'status': 'question closed'})
 
     def get_queryset(self):
-        queryset = Question.objects.order_by('-pub_date')
+        queryset = Question.objects.with_rating().prefetch_related('categories').order_by('-pub_date')
         start_date = self.request.query_params.get('start_date', None)
         if start_date:
             try:
@@ -75,7 +75,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
 class AnswerViewSet(viewsets.ModelViewSet):
     """Answers: anyone can read, only the author can change or delete."""
-    queryset = Answer.objects.order_by('pub_date')
+    queryset = Answer.objects.with_rating().order_by('pub_date')
     serializer_class = AnswerSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     owner_field = 'user'
@@ -101,28 +101,28 @@ def base(request):
 
 def question_list(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    questions = Question.objects.filter(categories=category).order_by('-pub_date')
+    questions = Question.objects.with_rating().filter(categories=category).order_by('-pub_date')
     return render(request, 'feed.html', {'questions': questions})
 
 
 def feed(request):
-    questions = Question.objects.all().order_by('-pub_date')
+    questions = Question.objects.with_rating().order_by('-pub_date')
     return render(request, 'feed.html', {'questions': questions})
 
 
 def popular(request):
-    questions = Question.objects.annotate(num_ratings=Count('questionrating')).order_by('-num_ratings')
+    questions = Question.objects.with_rating().order_by('-rating_total', '-pub_date')
     return render(request, 'popular.html', {'questions': questions})
 
 
 def recent(request):
-    questions = Question.objects.all().order_by('-pub_date')
+    questions = Question.objects.with_rating().order_by('-pub_date')
     return render(request, 'recent.html', {'questions': questions})
 
 
 def search(request):
     query = request.GET.get('query', '')
-    results = Question.objects.filter(title__icontains=query)
+    results = Question.objects.with_rating().filter(title__icontains=query).order_by('-pub_date')
     return render(request, 'search_results.html', {'results': results})
 
 
@@ -140,7 +140,7 @@ def register(request):
 
 def question_detail(request, id):
     question = get_object_or_404(Question, id=id)
-    answers = Answer.objects.filter(question=question)
+    answers = Answer.objects.with_rating().filter(question=question).select_related('user').order_by('pub_date')
 
     bookmark = None
     if request.user.is_authenticated:
@@ -218,7 +218,7 @@ def delete_bookmark(request, bookmark_id):
 
 @login_required
 def bookmarks(request):
-    bookmarks = Bookmark.objects.filter(user=request.user)
+    bookmarks = Bookmark.objects.filter(user=request.user).select_related('question').order_by('-created_at')
     return render(request, 'bookmarks.html', {'bookmarks': bookmarks})
 
 
