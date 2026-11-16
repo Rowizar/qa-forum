@@ -17,12 +17,12 @@
             {% if request.user.is_authenticated %}
                 <div class="post-actions">
                     {% if bookmark %}
-                        <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                        <form method="post" action="{% url 'delete_bookmark' bookmark.id %}" data-keep-scroll>
                             {% csrf_token %}
                             <button type="submit" class="button button-secondary button-small">{% translate 'Remove bookmark' %}</button>
                         </form>
                     {% else %}
-                        <form method="post" action="{% url 'add_bookmark' question.id %}">
+                        <form method="post" action="{% url 'add_bookmark' question.id %}" data-keep-scroll>
                             {% csrf_token %}
                             <button type="submit" class="button button-secondary button-small">{% translate 'Bookmark' %}</button>
                         </form>

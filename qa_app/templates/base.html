@@ -113,6 +113,26 @@
         root.dataset.theme = next;
         try { localStorage.setItem('theme', next); } catch (e) {}
     });
+
+    // Voting and bookmarking reload the page; keep the reader where they were.
+    (function () {
+        var key = 'keep-scroll';
+        try {
+            var saved = JSON.parse(sessionStorage.getItem(key) || 'null');
+            sessionStorage.removeItem(key);
+            if (saved && saved.path === location.pathname + location.search) {
+                window.scrollTo(0, saved.y);
+            }
+        } catch (e) {}
+        document.addEventListener('submit', function (event) {
+            if (event.defaultPrevented || !event.target.hasAttribute('data-keep-scroll')) return;
+            try {
+                sessionStorage.setItem(key, JSON.stringify({
+                    path: location.pathname + location.search, y: window.scrollY,
+                }));
+            } catch (e) {}
+        });
+    })();
 </script>
 </body>
 </html>

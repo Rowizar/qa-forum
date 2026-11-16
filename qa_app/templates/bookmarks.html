@@ -12,7 +12,7 @@
             </h2>
             <p class="post-text">{{ bookmark.question.text|truncatewords:30 }}</p>
             <div class="post-actions">
-                <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                <form method="post" action="{% url 'delete_bookmark' bookmark.id %}" data-keep-scroll>
                     {% csrf_token %}
                     <button type="submit" class="button button-secondary button-small">{% translate 'Remove bookmark' %}</button>
                 </form>
