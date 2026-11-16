@@ -1,0 +1,56 @@
+# Development stack: Django, Celery worker and beat, Redis, MailHog, Flower.
+# SECRET_KEY is read from the `.env` file next to this one.
+
+x-app: &app
+  build: .
+  volumes:
+    - .:/app
+  environment: &app-env
+    SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in the .env file}
+    DEBUG: "True"
+    ALLOWED_HOSTS: localhost,127.0.0.1
+    REDIS_URL: redis://redis:6379
+    EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+    EMAIL_HOST: mailhog
+    EMAIL_PORT: "1025"
+
+services:
+  web:
+    <<: *app
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - mailhog
+
+  celery:
+    <<: *app
+    command: celery -A config worker -l info
+    depends_on:
+      - web
+      - redis
+
+  celerybeat:
+    <<: *app
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:alpine
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"  # web interface
+
+  flower:
+    image: mher/flower:0.9.7
+    command: ["flower", "--broker=redis://redis:6379/0", "--port=5555"]
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
