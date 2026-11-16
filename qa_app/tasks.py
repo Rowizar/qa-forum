@@ -1,9 +1,11 @@
 from datetime import timedelta
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail, send_mass_mail
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.translation import gettext as _
 
 from .models import Question
 from .services import save_visits
@@ -38,10 +40,14 @@ def send_daily_email():
 
 
 @shared_task
-def send_question_created_email(user_email, question_title):
+def send_question_created_email(user_email, question_title, language=None):
+    # `language` is the interface language the author used when asking.
+    with translation.override(language or settings.LANGUAGE_CODE):
+        subject = _('Your question has been posted')
+        body = _('Thank you for your question: "%(title)s"') % {'title': question_title}
     send_mail(
-        'Your Question Has Been Posted',
-        f'Thank you for your question: "{question_title}"',
+        subject,
+        body,
         None,  # sender: DEFAULT_FROM_EMAIL
         [user_email],
         fail_silently=False,

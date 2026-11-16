@@ -6,6 +6,8 @@ from functools import lru_cache
 import redis
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils.translation import get_language
+
 
 from .models import PageVisit
 
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 VISITS_QUEUE = 'page_visits'
 
 # Requests to these sections are not recorded.
-EXCLUDED_PATH_PREFIXES = ('/admin/', '/static/', '/media/')
+EXCLUDED_PATH_PREFIXES = ('/admin/', '/static/', '/media/', '/i18n/')
 
 # Order matters: the first match wins. Edge and Opera also say "Chrome",
 # and Chrome also says "Safari", so the more specific names go first.
@@ -116,7 +118,9 @@ def notify_question_created(question):
     # Imported here because tasks.py imports this module.
     from .tasks import send_question_created_email
     try:
-        send_question_created_email.delay(question.author.email, question.title)
+        # The task runs outside the request, so it is told which language
+        # the author is using right now.
+        send_question_created_email.delay(question.author.email, question.title, get_language())
     except Exception:
         logger.exception('Could not queue the e-mail about question %s', question.pk)
 

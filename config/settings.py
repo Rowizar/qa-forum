@@ -68,6 +68,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # Picks the interface language: the visitor's own choice (a cookie set by
+    # the RU/EN switch) or, without one, the language of their browser.
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -123,7 +126,15 @@ LOGOUT_REDIRECT_URL = 'feed'
 
 # --- Internationalization ---------------------------------------------------
 
-LANGUAGE_CODE = 'en-us'
+# English is the language the texts are written in and the fallback for
+# browsers that ask for anything else. Russian lives in locale/ru/.
+LANGUAGE_CODE = 'en'
+LANGUAGES = [
+    ('en', 'English'),
+    ('ru', 'Русский'),
+]
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True

@@ -31,6 +31,31 @@ python manage.py runserver
 Без `REDIS_URL` кеш хранится в памяти, задачи Celery выполняются сразу в том же
 процессе, а письма печатаются в консоль.
 
+Чтобы сайт не был пустым, можно заполнить его демо-данными (пользователи, вопросы,
+ответы, голоса):
+
+```bash
+python manage.py seed_demo
+```
+
+Все демо-пользователи (`alice`, `boris`, `chen`, `dasha`) входят с паролем `demo12345`.
+
+## Языки и тема
+
+Интерфейс есть на русском и английском. По умолчанию сайт выбирает язык браузера;
+переключатель RU/EN в шапке запоминает выбор. Тёмная или светлая тема берётся из
+настроек системы и тоже переключается кнопкой в шапке.
+
+Тексты в коде написаны на английском, русский перевод лежит в
+`locale/ru/LC_MESSAGES/django.po`. После изменения текстов перевод нужно обновить
+и скомпилировать. Для этого нужен gettext; он уже есть в Docker-образе:
+
+```bash
+docker compose run --rm --no-deps web python manage.py makemessages -l ru -i .venv
+# дописать переводы в django.po, затем:
+docker compose run --rm --no-deps web python manage.py compilemessages -l ru -i .venv
+```
+
 ## Запуск в Docker
 
 Поднимает сайт, Celery (worker и beat), Redis, MailHog и Flower.

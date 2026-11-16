@@ -28,6 +28,9 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('qa_app/', include('qa_app.urls')),
+    # set_language: the view behind the RU/EN switch in the header.
+    path('i18n/', include('django.conf.urls.i18n')),
+
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('', RedirectView.as_view(url='/qa_app/', permanent=True)),

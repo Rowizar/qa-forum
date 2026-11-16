@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import OuterRef, Q, Subquery, Sum
 from django.db.models.functions import Coalesce
+from django.utils.translation import gettext_lazy as _
 from simple_history.models import HistoricalRecords
 
 
@@ -147,15 +148,16 @@ class Bookmark(models.Model):
 
 
 class PageVisit(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь')
-    date = models.DateTimeField(auto_now_add=True, verbose_name='Дата посещения')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_('user'))
+    date = models.DateTimeField(auto_now_add=True, verbose_name=_('visit date'))
     url = models.CharField(max_length=2048, verbose_name='URL')
-    query_params = models.TextField(verbose_name='GET параметры')
-    method = models.CharField(max_length=10, verbose_name='HTTP метод')
+    query_params = models.TextField(verbose_name=_('GET parameters'))
+    method = models.CharField(max_length=10, verbose_name=_('HTTP method'))
     user_agent = models.CharField(max_length=256, verbose_name='User Agent')
-    os = models.CharField(max_length=100, verbose_name='Операционная система', blank=True, null=True)
-    browser = models.CharField(max_length=100, verbose_name='Браузер', blank=True, null=True)
+    os = models.CharField(max_length=100, verbose_name=_('operating system'), blank=True, null=True)
+    browser = models.CharField(max_length=100, verbose_name=_('browser'), blank=True, null=True)
 
     class Meta:
-        verbose_name = 'Посещение страницы'
-        verbose_name_plural = 'Посещения страниц'
+        verbose_name = _('page visit')
+        verbose_name_plural = _('page visits')

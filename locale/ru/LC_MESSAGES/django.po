@@ -1,0 +1,297 @@
+# Russian translation of the QA forum interface.
+#
+# After changing texts in the code or in this file run (see README):
+#   docker compose run --rm --no-deps web python manage.py makemessages -l ru -i .venv
+#   docker compose run --rm --no-deps web python manage.py compilemessages -l ru -i .venv
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: qa-forum\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-16 16:23+0000\n"
+"PO-Revision-Date: 2026-11-16 16:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: qa_app/forms.py:14 qa_app/templates/base.html:95
+msgid "Categories"
+msgstr "Категории"
+
+#: qa_app/forms.py:21
+msgid "Title"
+msgstr "Заголовок"
+
+#: qa_app/forms.py:22
+msgid "Question"
+msgstr "Вопрос"
+
+#: qa_app/forms.py:23
+msgid "Picture (optional)"
+msgstr "Картинка (необязательно)"
+
+#: qa_app/forms.py:34
+msgid "Answer"
+msgstr "Ответ"
+
+#: qa_app/forms.py:43
+msgid "E-mail"
+msgstr "Электронная почта"
+
+#: qa_app/forms.py:44
+msgid "Used for notifications about your questions."
+msgstr "Нужна для уведомлений о ваших вопросах."
+
+#: qa_app/models.py:152
+msgid "user"
+msgstr "пользователь"
+
+#: qa_app/models.py:153
+msgid "visit date"
+msgstr "дата посещения"
+
+#: qa_app/models.py:155
+msgid "GET parameters"
+msgstr "GET-параметры"
+
+#: qa_app/models.py:156
+msgid "HTTP method"
+msgstr "HTTP-метод"
+
+#: qa_app/models.py:158
+msgid "operating system"
+msgstr "операционная система"
+
+#: qa_app/models.py:159
+msgid "browser"
+msgstr "браузер"
+
+#: qa_app/models.py:162
+msgid "page visit"
+msgstr "посещение страницы"
+
+#: qa_app/models.py:163
+msgid "page visits"
+msgstr "посещения страниц"
+
+#: qa_app/tasks.py:46
+msgid "Your question has been posted"
+msgstr "Ваш вопрос опубликован"
+
+#: qa_app/tasks.py:47
+#, python-format
+msgid "Thank you for your question: \"%(title)s\""
+msgstr "Спасибо за вопрос: «%(title)s»"
+
+#: qa_app/templates/ask_question.html:4 qa_app/templates/ask_question.html:7
+#: qa_app/templates/base.html:93
+msgid "Ask a question"
+msgstr "Задать вопрос"
+
+#: qa_app/templates/ask_question.html:11
+msgid "Post question"
+msgstr "Опубликовать"
+
+#: qa_app/templates/base.html:36
+msgid "Sections"
+msgstr "Разделы"
+
+#: qa_app/templates/base.html:37 qa_app/views.py:113
+msgid "Feed"
+msgstr "Лента"
+
+#: qa_app/templates/base.html:38 qa_app/views.py:121
+msgid "Popular"
+msgstr "Популярные"
+
+#: qa_app/templates/base.html:40 qa_app/templates/bookmarks.html:4
+#: qa_app/templates/bookmarks.html:7
+msgid "Bookmarks"
+msgstr "Избранное"
+
+#: qa_app/templates/base.html:47
+msgid "Search questions"
+msgstr "Поиск по вопросам"
+
+#: qa_app/templates/base.html:48
+msgid "Search"
+msgstr "Найти"
+
+#: qa_app/templates/base.html:53
+msgid "Language"
+msgstr "Язык"
+
+#: qa_app/templates/base.html:65 qa_app/templates/base.html:66
+msgid "Switch between light and dark theme"
+msgstr "Переключить светлую и тёмную тему"
+
+#: qa_app/templates/base.html:75
+msgid "Log out"
+msgstr "Выйти"
+
+#: qa_app/templates/base.html:78 qa_app/templates/login.html:4
+#: qa_app/templates/login.html:9 qa_app/templates/login.html:14
+#: qa_app/templates/register.html:16
+msgid "Log in"
+msgstr "Войти"
+
+#: qa_app/templates/base.html:79 qa_app/templates/login.html:18
+#: qa_app/templates/register.html:4 qa_app/templates/register.html:8
+#: qa_app/templates/register.html:12
+msgid "Sign up"
+msgstr "Регистрация"
+
+#: qa_app/templates/bookmarks.html:17 qa_app/templates/question_detail.html:22
+msgid "Remove bookmark"
+msgstr "Убрать из избранного"
+
+#: qa_app/templates/bookmarks.html:22
+msgid "You have no bookmarks yet."
+msgstr "В избранном пока ничего нет."
+
+#: qa_app/templates/includes/question_meta.html:5
+msgid "closed"
+msgstr "закрыт"
+
+#: qa_app/templates/includes/votes.html:6
+msgid "Vote up"
+msgstr "Нравится"
+
+#: qa_app/templates/includes/votes.html:10
+msgid "Rating"
+msgstr "Рейтинг"
+
+#: qa_app/templates/includes/votes.html:13
+msgid "Vote down"
+msgstr "Не нравится"
+
+#: qa_app/templates/login.html:17
+msgid "No account yet?"
+msgstr "Ещё нет аккаунта?"
+
+#: qa_app/templates/question_detail.html:27
+msgid "Bookmark"
+msgstr "В избранное"
+
+#: qa_app/templates/question_detail.html:32
+msgid ""
+"Close the question? It will stop accepting answers and cannot be reopened."
+msgstr ""
+"Закрыть вопрос? Новые ответы принимать перестанут, открыть его снова нельзя."
+
+#: qa_app/templates/question_detail.html:34
+msgid "Close question"
+msgstr "Закрыть вопрос"
+
+#: qa_app/templates/question_detail.html:43
+#, python-format
+msgid "%(counter)s answer"
+msgid_plural "%(counter)s answers"
+msgstr[0] "%(counter)s ответ"
+msgstr[1] "%(counter)s ответа"
+msgstr[2] "%(counter)s ответов"
+msgstr[3] "%(counter)s ответа"
+
+#: qa_app/templates/question_detail.html:59
+msgid "No answers yet."
+msgstr "Ответов пока нет."
+
+#: qa_app/templates/question_detail.html:63
+msgid "This question is closed: new answers are not accepted."
+msgstr "Вопрос закрыт: новые ответы не принимаются."
+
+#: qa_app/templates/question_detail.html:65
+msgid "Your answer"
+msgstr "Ваш ответ"
+
+#: qa_app/templates/question_detail.html:69
+msgid "Post answer"
+msgstr "Ответить"
+
+#: qa_app/templates/question_detail.html:74
+#, python-format
+msgid ""
+"<a href=\"%(login_url)s?next=%(path)s\">Log in</a> to answer this question."
+msgstr ""
+"<a href=\"%(login_url)s?next=%(path)s\">Войдите</a>, чтобы ответить на вопрос."
+
+#: qa_app/templates/question_list.html:26
+msgid "Pages"
+msgstr "Страницы"
+
+#: qa_app/templates/question_list.html:28
+msgid "Back"
+msgstr "Назад"
+
+#: qa_app/templates/question_list.html:31
+#, python-format
+msgid "Page %(number)s of %(total)s"
+msgstr "Страница %(number)s из %(total)s"
+
+#: qa_app/templates/question_list.html:34
+msgid "Next"
+msgstr "Вперёд"
+
+#: qa_app/templates/register.html:15
+msgid "Already have an account?"
+msgstr "Уже есть аккаунт?"
+
+#: qa_app/views.py:107
+msgid "There are no questions here yet."
+msgstr "Здесь пока нет вопросов."
+
+#: qa_app/views.py:114
+msgid "No questions yet. Be the first to ask!"
+msgstr "Вопросов пока нет. Задайте первый!"
+
+#: qa_app/views.py:128
+#, python-format
+msgid "Category: %(name)s"
+msgstr "Категория: %(name)s"
+
+#: qa_app/views.py:129
+msgid "There are no questions in this category yet."
+msgstr "В этой категории пока нет вопросов."
+
+#: qa_app/views.py:139
+msgid "Nothing found for your query."
+msgstr "По вашему запросу ничего не найдено."
+
+#: qa_app/views.py:142
+msgid "Type something into the search field."
+msgstr "Введите запрос в строку поиска."
+
+#: qa_app/views.py:143
+msgid "Search results"
+msgstr "Результаты поиска"
+
+#: qa_app/views.py:164
+msgid "Your question is posted."
+msgstr "Вопрос опубликован."
+
+#: qa_app/views.py:193
+msgid "Your answer is posted."
+msgstr "Ответ опубликован."
+
+#: qa_app/views.py:213
+#, python-format
+msgid "Welcome, %(name)s!"
+msgstr "Добро пожаловать, %(name)s!"
+
+#: qa_app/views.py:249
+msgid "Added to bookmarks."
+msgstr "Добавлено в избранное."
+
+#: qa_app/views.py:257
+msgid "Removed from bookmarks."
+msgstr "Убрано из избранного."
+
+#: qa_app/views.py:270
+msgid "The question is closed."
+msgstr "Вопрос закрыт."
