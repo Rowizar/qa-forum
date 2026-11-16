@@ -43,7 +43,7 @@ class CreateQuestionTests(TestCase):
         cls.url = reverse('ask_question')
 
     def test_every_page_links_to_the_form(self):
-        for url in [reverse('feed'), reverse('login'), reverse('popular')]:
+        for url in [reverse('feed'), reverse('popular'), reverse('search')]:
             with self.subTest(url=url):
                 self.assertContains(self.client.get(url), 'href="%s"' % self.url)
 
@@ -104,8 +104,8 @@ class CategoryPageTests(TestCase):
 
     def test_category_is_named_and_linked_from_every_page(self):
         url = reverse('question_list', args=[self.category.id])
-        self.assertContains(self.client.get(url), 'Категория: Python')
-        for page in [reverse('feed'), reverse('popular'), reverse('login')]:
+        self.assertContains(self.client.get(url), 'Category: Python')
+        for page in [reverse('feed'), reverse('popular'), reverse('search')]:
             with self.subTest(page=page):
                 self.assertContains(self.client.get(page), 'href="%s"' % url)
 
@@ -126,10 +126,10 @@ class CloseQuestionTests(TestCase):
 
     def test_author_sees_the_button_and_can_close(self):
         self.client.force_login(self.author)
-        self.assertContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertContains(self.client.get(self.page), 'Close question')
         self.assertRedirects(self.client.post(self.url), self.page)
         self.assertTrue(self.is_closed())
-        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertNotContains(self.client.get(self.page), 'Close question')
         # The change is recorded in the question's history.
         self.assertEqual(self.question.history.count(), 2)
 
@@ -139,10 +139,10 @@ class CloseQuestionTests(TestCase):
         self.assertTrue(self.is_closed())
 
     def test_other_users_cannot_close(self):
-        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertNotContains(self.client.get(self.page), 'Close question')
         self.assertEqual(self.client.post(self.url).status_code, 302)  # to the login page
         self.client.force_login(self.stranger)
-        self.assertNotContains(self.client.get(self.page), 'Закрыть вопрос')
+        self.assertNotContains(self.client.get(self.page), 'Close question')
         self.assertEqual(self.client.post(self.url).status_code, 403)
         self.assertFalse(self.is_closed())
 
@@ -169,7 +169,7 @@ class QuestionListTests(TestCase):
     def test_feed_shows_newest_first_ten_per_page(self):
         response = self.client.get(reverse('feed'))
         self.assertEqual(self.titles(response), [f'Question {n:02}' for n in range(25, 15, -1)])
-        self.assertContains(response, 'Страница 1 из 3')
+        self.assertContains(response, 'Page 1 of 3')
         self.assertContains(response, 'href="?page=2"')
 
     def test_last_page_and_out_of_range_pages(self):
@@ -185,17 +185,17 @@ class QuestionListTests(TestCase):
 
     def test_search_pages_keep_the_query(self):
         response = self.client.get(reverse('search') + '?query=pagination')
-        self.assertContains(response, 'Страница 1 из 3')
+        self.assertContains(response, 'Page 1 of 3')
         self.assertContains(response, 'href="?query=pagination&amp;page=2"')
         self.assertContains(response, 'value="pagination"')
         second = self.client.get(reverse('search') + '?query=pagination&page=2')
         self.assertEqual(len(self.titles(second)), 10)
 
     def test_search_without_results_or_query(self):
-        self.assertContains(self.client.get(reverse('search') + '?query=unicorn'), 'ничего не найдено')
+        self.assertContains(self.client.get(reverse('search') + '?query=unicorn'), 'Nothing found')
         response = self.client.get(reverse('search'))
         self.assertEqual(self.titles(response), [])
-        self.assertContains(response, 'Введите запрос')
+        self.assertContains(response, 'Type something')
 
     def test_recent_redirects_to_the_feed(self):
         self.assertRedirects(self.client.get('/qa_app/recent/'), reverse('feed'))
@@ -428,7 +428,7 @@ class LoginTests(TestCase):
 
     def test_wrong_password(self):
         response = self.client.post(reverse('login'), {'username': 'reader', 'password': 'nope'})
-        self.assertContains(response, 'Invalid username or password')
+        self.assertContains(response, 'Please enter a correct username and password')
 
 
 class ApiPermissionTests(TestCase):
@@ -529,14 +529,14 @@ class AnswerTests(TestCase):
     def test_answer_to_an_open_question(self):
         self.client.force_login(self.user)
         url = reverse('question_detail', args=[self.open.id])
-        self.assertContains(self.client.get(url), 'Отправить ответ')
+        self.assertContains(self.client.get(url), 'Your answer')
         self.assertRedirects(self.client.post(url, {'text': 'My answer'}), url)
         self.assertEqual(self.open.answer_set.get().user, self.user)
 
     def test_anonymous_cannot_answer(self):
         url = reverse('question_detail', args=[self.open.id])
         response = self.client.get(url)
-        self.assertNotContains(response, 'Отправить ответ')
+        self.assertNotContains(response, 'Your answer')
         self.assertContains(response, reverse('login') + '?next=' + url)
         self.client.post(url, {'text': 'My answer'})
         self.assertEqual(Answer.objects.count(), 0)
@@ -545,8 +545,8 @@ class AnswerTests(TestCase):
         self.client.force_login(self.user)
         url = reverse('question_detail', args=[self.closed.id])
         response = self.client.get(url)
-        self.assertContains(response, 'Вопрос закрыт')
-        self.assertNotContains(response, 'Отправить ответ')
+        self.assertContains(response, 'This question is closed')
+        self.assertNotContains(response, 'Your answer')
         self.assertEqual(self.client.post(url, {'text': 'My answer'}).status_code, 403)
         self.assertEqual(Answer.objects.count(), 0)
 

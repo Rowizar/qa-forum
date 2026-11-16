@@ -1,70 +1,88 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ question.title }} · {% endblock %}
 
 {% block content %}
-    <h2>{{ question.title }}</h2>
-    {% include 'includes/question_meta.html' %}
-    {% if question.image %}
-        <img style="max-width: 500px" src="{{ question.image.url }}" alt="">
-    {% endif %}
-    <p>{{ question.text|linebreaksbr }}</p>
-    {% include 'includes/question_votes.html' %}
+    <article class="card post">
+        {% include 'includes/question_votes.html' %}
+        <div class="post-body">
+            <h1>{{ question.title }}</h1>
+            <div class="post-text">{{ question.text|linebreaks }}</div>
+            {% if question.image %}
+                <img class="post-image" src="{{ question.image.url }}" alt="">
+            {% endif %}
+            {% include 'includes/question_meta.html' %}
 
-    {% if request.user.is_authenticated %}
-        {% if bookmark %}
-            <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-link p-0">Удалить из избранного</button>
-            </form>
-        {% else %}
-            <form method="post" action="{% url 'add_bookmark' question.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-link p-0">Добавить в избранное</button>
-            </form>
-        {% endif %}
-    {% endif %}
-
-    {% if can_close %}
-        <form method="post" action="{% url 'close_question' question.id %}"
-              onsubmit="return confirm('Закрыть вопрос? Новые ответы принимать перестанут, открыть его снова нельзя.');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-link p-0">Закрыть вопрос</button>
-        </form>
-    {% endif %}
-
-    <h2>Ответы</h2>
-    {% for answer in answers %}
-        <div>
-            <p>{{ answer.text }}</p>
-            <p>By {{ answer.user.username }} at {{ answer.pub_date }}</p>
-            <div class="votes">
-                {% if request.user.is_authenticated %}
-                    <form method="post" action="{% url 'upvote_answer' answer.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="vote-button" title="Нравится">🔺</button>
-                    </form>
-                {% endif %}
-                <span>{{ answer.get_rating }}</span>
-                {% if request.user.is_authenticated %}
-                    <form method="post" action="{% url 'downvote_answer' answer.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="vote-button" title="Не нравится">🔻</button>
-                    </form>
-                {% endif %}
-            </div>
+            {% if request.user.is_authenticated %}
+                <div class="post-actions">
+                    {% if bookmark %}
+                        <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="button button-secondary button-small">{% translate 'Remove bookmark' %}</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'add_bookmark' question.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="button button-secondary button-small">{% translate 'Bookmark' %}</button>
+                        </form>
+                    {% endif %}
+                    {% if can_close %}
+                        <form method="post" action="{% url 'close_question' question.id %}"
+                              data-confirm="{% translate 'Close the question? It will stop accepting answers and cannot be reopened.' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="button button-secondary button-danger button-small">{% translate 'Close question' %}</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
+    </article>
+
+    <h2 class="section-title">
+        {% blocktranslate count counter=answers|length %}{{ counter }} answer{% plural %}{{ counter }} answers{% endblocktranslate %}
+    </h2>
+    {% for answer in answers %}
+        <article class="card post">
+            {% url 'upvote_answer' answer.id as up_url %}
+            {% url 'downvote_answer' answer.id as down_url %}
+            {% include 'includes/votes.html' with rating=answer.get_rating %}
+            <div class="post-body">
+                <div class="post-text">{{ answer.text|linebreaks }}</div>
+                <div class="post-meta">
+                    <span>{{ answer.user.username }}</span>
+                    <time datetime="{{ answer.pub_date|date:'c' }}">{{ answer.pub_date|date:"SHORT_DATETIME_FORMAT" }}</time>
+                </div>
+            </div>
+        </article>
+    {% empty %}
+        <div class="card empty">{% translate 'No answers yet.' %}</div>
     {% endfor %}
 
     {% if question.is_closed %}
-        <p class="alert alert-secondary">Вопрос закрыт: новые ответы не принимаются.</p>
+        <div class="message message-info">{% translate 'This question is closed: new answers are not accepted.' %}</div>
     {% elif request.user.is_authenticated %}
-        <h2>Отправить ответ</h2>
-        <form method="post">
+        <h2 class="section-title">{% translate 'Your answer' %}</h2>
+        <form method="post" class="card">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Отправить</button>
+            {% include 'includes/form_fields.html' %}
+            <button type="submit" class="button">{% translate 'Post answer' %}</button>
         </form>
     {% else %}
-        <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы ответить.</p>
+        <div class="card empty">
+            {% url 'login' as login_url %}
+            {% blocktranslate with path=request.path|urlencode %}<a href="{{ login_url }}?next={{ path }}">Log in</a> to answer this question.{% endblocktranslate %}
+        </div>
     {% endif %}
-{% endblock %}
 
+    <script>
+        // Ask before irreversible actions (closing a question).
+        document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!window.confirm(form.dataset.confirm)) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
+{% endblock %}

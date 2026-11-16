@@ -1,17 +1,21 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load i18n %}
 
-{% block content %}
-    <h2>Login</h2>
-    <form method="post">
+{% block title %}{% translate 'Log in' %} · {% endblock %}
+
+{% block layout %}
+<main class="wrap layout-narrow">
+    {% include 'includes/messages.html' %}
+    <h1>{% translate 'Log in' %}</h1>
+    <form method="post" class="card">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
-        <label for="username">Username:</label><br>
-        <input type="text" id="username" name="username"><br>
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" name="password"><br>
-        <input type="submit" value="Login">
+        {% include 'includes/form_fields.html' %}
+        <button type="submit" class="button button-block">{% translate 'Log in' %}</button>
     </form>
-    {% if error %}
-        <p><strong>{{ error }}</strong></p>
-    {% endif %}
+    <p class="muted">
+        {% translate 'No account yet?' %}
+        <a href="{% url 'register' %}">{% translate 'Sign up' %}</a>
+    </p>
+</main>
 {% endblock %}

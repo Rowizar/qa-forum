@@ -1,37 +1,13 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Задать вопрос{% endblock %}
+{% block title %}{% translate 'Ask a question' %} · {% endblock %}
 
 {% block content %}
-    <h1>Задать вопрос</h1>
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <h1>{% translate 'Ask a question' %}</h1>
+    <form method="post" enctype="multipart/form-data" class="card" novalidate>
         {% csrf_token %}
-        {% for error in form.non_field_errors %}
-            <p class="alert alert-danger">{{ error }}</p>
-        {% endfor %}
-
-        {% for field in form %}
-            <div class="form-group">
-                {% if field.name == 'categories' %}
-                    {% if field.field.queryset.exists %}
-                        <p class="mb-1">{{ field.label }}</p>
-                        {% for checkbox in field %}
-                            <div class="form-check form-check-inline">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label ml-1" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% else %}
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                {% endif %}
-                {% for error in field.errors %}
-                    <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-
-        <button type="submit" class="btn btn-primary">Создать</button>
+        {% include 'includes/form_fields.html' %}
+        <button type="submit" class="button">{% translate 'Post question' %}</button>
     </form>
 {% endblock %}

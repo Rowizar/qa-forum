@@ -1,0 +1,4 @@
+{# One-time notices set by the views: "Bookmark added", "Question closed" and so on. #}
+{% for message in messages %}
+    <div class="message message-{{ message.level_tag }}" role="status">{{ message }}</div>
+{% endfor %}

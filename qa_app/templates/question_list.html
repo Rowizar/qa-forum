@@ -1,41 +1,38 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}{{ heading }}{% endblock %}
+{% block title %}{{ heading }} · {% endblock %}
 
 {% block content %}
     <h1>{{ heading }}</h1>
     {% for question in questions %}
-        <div class="question">
-            <h2><a href="{% url 'question_detail' question.id %}">{{ question.title }}</a></h2>
-            {% include 'includes/question_meta.html' %}
-            {% if question.image %}
-                <img style="max-width: 500px" src="{{ question.image.url }}" alt="">
-            {% endif %}
-            <p>{{ question.text|truncatewords:60 }}</p>
+        <article class="card post">
             {% include 'includes/question_votes.html' %}
-        </div>
+            <div class="post-body">
+                <h2 class="post-title"><a href="{% url 'question_detail' question.id %}">{{ question.title }}</a></h2>
+                <p class="post-text">{{ question.text|truncatewords:50 }}</p>
+                {% if question.image %}
+                    <img class="post-image" src="{{ question.image.url }}" alt="" loading="lazy">
+                {% endif %}
+                {% include 'includes/question_meta.html' %}
+            </div>
+        </article>
     {% empty %}
-        <p>{{ empty_message }}</p>
+        <div class="card empty">{{ empty_message }}</div>
     {% endfor %}
 
     {% if questions.has_other_pages %}
         {# querystring keeps the other parameters of the address, e.g. the search query #}
-        <nav class="mt-4" aria-label="Страницы">
-            <ul class="pagination">
-                {% if questions.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="{% querystring page=questions.previous_page_number %}">← Назад</a>
-                    </li>
-                {% endif %}
-                <li class="page-item disabled">
-                    <span class="page-link">Страница {{ questions.number }} из {{ questions.paginator.num_pages }}</span>
-                </li>
-                {% if questions.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{% querystring page=questions.next_page_number %}">Вперёд →</a>
-                    </li>
-                {% endif %}
-            </ul>
+        <nav class="pagination" aria-label="{% translate 'Pages' %}">
+            {% if questions.has_previous %}
+                <a class="button button-secondary" href="{% querystring page=questions.previous_page_number %}">← {% translate 'Back' %}</a>
+            {% endif %}
+            <span class="muted">
+                {% blocktranslate with number=questions.number total=questions.paginator.num_pages %}Page {{ number }} of {{ total }}{% endblocktranslate %}
+            </span>
+            {% if questions.has_next %}
+                <a class="button button-secondary" href="{% querystring page=questions.next_page_number %}">{% translate 'Next' %} →</a>
+            {% endif %}
         </nav>
     {% endif %}
 {% endblock %}

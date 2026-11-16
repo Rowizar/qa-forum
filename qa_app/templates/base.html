@@ -1,65 +1,106 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Мой сайт{% endblock %}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <title>{% block title %}{% endblock %}QA</title>
+    <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+    {# Applies the saved theme before the page is drawn, so there is no flash of the wrong colours. #}
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'light' || theme === 'dark') {
+                    document.documentElement.dataset.theme = theme;
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-<header class="d-flex justify-content-between p-3 bg-light header">
-    <div>
-<a href="{% url 'feed' %}" style="background-color: #007bff; font-weight: bold; font-size: 30px; color: white; border-radius: 10px; display: inline-block; text-decoration: none;">QA</a>
-    </div>
-    <div class="d-flex justify-content-center">
-        <nav class="pr-3" >
-            <a href="{% url 'feed' %}" class="btn btn-link nav-link">Лента</a>
-            <a href="{% url 'popular' %}" class="btn btn-link nav-link">Популярные</a>
+<header class="site-header">
+    <div class="wrap header-inner">
+        <a href="{% url 'feed' %}" class="logo" aria-label="QA">
+            <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+                <path fill="#007bff" d="M6 3h20a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H15l-7 5.5V25H6a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z"/>
+                <path fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M12.4 10.6a3.7 3.7 0 1 1 5.6 3.2c-1.2.8-2 1.5-2 2.9"/>
+                <circle fill="#fff" cx="16" cy="20.3" r="1.6"/>
+            </svg>
+            QA
+        </a>
+
+        {% with view_name=request.resolver_match.url_name %}
+        <nav class="main-nav" aria-label="{% translate 'Sections' %}">
+            <a href="{% url 'feed' %}" {% if view_name == 'feed' %}aria-current="page"{% endif %}>{% translate 'Feed' %}</a>
+            <a href="{% url 'popular' %}" {% if view_name == 'popular' %}aria-current="page"{% endif %}>{% translate 'Popular' %}</a>
             {% if request.user.is_authenticated %}
-                <a href="{% url 'bookmarks' %}" class="btn btn-link nav-link">Избранное</a>
+                <a href="{% url 'bookmarks' %}" {% if view_name == 'bookmarks' %}aria-current="page"{% endif %}>{% translate 'Bookmarks' %}</a>
             {% endif %}
         </nav>
-        <form action="{% url 'search' %}" method="GET" class="form-inline pr-3">
-            <input type="text" name="query" class="form-control" value="{{ request.GET.query }}">
-            <button type="submit" class="btn btn-primary">
-                <span>Search</span>
-            </button>
-        </form>
-    </div>
-    <div>
-    {% if request.user.is_authenticated %}
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Выход</button>
-        </form>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn btn-primary">Войти</a>
-        <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
-    {% endif %}
-</div>
-</header>
+        {% endwith %}
 
-<main class="container mt-3">
-    <div class="row">
-        <div class="col-md-8">
-            {% block content %}{% endblock %}
-        </div>
-        <div class="col-md-4">
-            {# Anonymous visitors are sent to the login page and then back to the form. #}
-            <a href="{% url 'ask_question' %}" class="btn btn-primary btn-block mb-3">Задать вопрос</a>
-            {% if all_categories %}
-                <h2 class="h5">Категории</h2>
-                <ul class="list-unstyled">
-                    {% for category in all_categories %}
-                        <li><a href="{% url 'question_list' category.id %}">{{ category.name }}</a></li>
-                    {% endfor %}
-                </ul>
+        <form action="{% url 'search' %}" method="get" class="search" role="search">
+            <input type="search" name="query" value="{{ request.GET.query }}"
+                   placeholder="{% translate 'Search questions' %}" aria-label="{% translate 'Search questions' %}">
+            <button type="submit" class="button">{% translate 'Search' %}</button>
+        </form>
+
+        <div class="header-actions">
+            <button type="button" class="button button-secondary icon-button theme-toggle" id="theme-toggle"
+                    title="{% translate 'Switch between light and dark theme' %}"
+                    aria-label="{% translate 'Switch between light and dark theme' %}">
+                <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            </button>
+
+            {% if request.user.is_authenticated %}
+                <span class="username">{{ request.user.username }}</span>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="button button-secondary">{% translate 'Log out' %}</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="button button-secondary">{% translate 'Log in' %}</a>
+                <a href="{% url 'register' %}" class="button">{% translate 'Sign up' %}</a>
             {% endif %}
         </div>
     </div>
+</header>
+
+{% block layout %}
+<main class="wrap layout">
+    <div class="content">
+        {% include 'includes/messages.html' %}
+        {% block content %}{% endblock %}
     </div>
+    <aside class="sidebar">
+        {# Anonymous visitors are sent to the login page and then back to the form. #}
+        <a href="{% url 'ask_question' %}" class="button button-block">{% translate 'Ask a question' %}</a>
+        {% if all_categories %}
+            <h2>{% translate 'Categories' %}</h2>
+            <ul class="tags">
+                {% for category in all_categories %}
+                    <li><a href="{% url 'question_list' category.id %}" class="tag">{{ category.name }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </aside>
 </main>
+{% endblock %}
+
+<script>
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+        var root = document.documentElement;
+        var isDark = root.dataset.theme
+            ? root.dataset.theme === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var next = isDark ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+</script>
 </body>
 </html>

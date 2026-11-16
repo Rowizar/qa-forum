@@ -1,17 +1,24 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% translate 'Bookmarks' %} · {% endblock %}
 
 {% block content %}
-    <h2>Избранное</h2>
+    <h1>{% translate 'Bookmarks' %}</h1>
     {% for bookmark in bookmarks %}
-        <div>
-            <h2><a href="{% url 'question_detail' id=bookmark.question.id %}">{{ bookmark.question.title }}</a></h2>
-            <p>{{ bookmark.question.text|truncatechars:100 }}</p>
-            <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-link p-0">Удалить из избранного</button>
-            </form>
-        </div>
+        <article class="card">
+            <h2 class="post-title">
+                <a href="{% url 'question_detail' id=bookmark.question.id %}">{{ bookmark.question.title }}</a>
+            </h2>
+            <p class="post-text">{{ bookmark.question.text|truncatewords:30 }}</p>
+            <div class="post-actions">
+                <form method="post" action="{% url 'delete_bookmark' bookmark.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="button button-secondary button-small">{% translate 'Remove bookmark' %}</button>
+                </form>
+            </div>
+        </article>
     {% empty %}
-        <p>У вас пока нет вопросов в избранном.</p>
+        <div class="card empty">{% translate 'You have no bookmarks yet.' %}</div>
     {% endfor %}
 {% endblock %}
